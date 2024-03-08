@@ -6,6 +6,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {BaseStrategy, ERC20} from "@tokenized-strategy/BaseStrategy.sol";
 
+import {AuctionSwapper, Auction} from "@periphery/swappers/AuctionSwapper.sol";
+
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 
@@ -22,7 +24,7 @@ import {ISilo} from "@silo/interfaces/ISilo.sol";
 
 // NOTE: To implement permissioned functions you can use the onlyManagement, onlyEmergencyAuthorized and onlyKeepers modifiers
 
-contract SiloLlamaStrategy is BaseStrategy {
+contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
 
     using SafeERC20 for ERC20;
 
@@ -61,6 +63,22 @@ contract SiloLlamaStrategy is BaseStrategy {
         rewardTokens = _rewardTokens;
 
         ERC20(_asset).forceApprove(_silo, type(uint256).max);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    EXTERNAL MANAGEMENT FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev @todo
+     */
+    function setPostTakeHookFlag(bool _flag) external onlyManagement {
+        Auction(auction).setHookFlags(
+            false, // _kickable
+            false, // _kick,
+            false, // _preTake,
+            _flag // _postTake
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -184,9 +202,19 @@ contract SiloLlamaStrategy is BaseStrategy {
             address rewardToken = rewardTokens[i];
             uint256 rewardBalance = ERC20(rewardToken).balanceOf(address(this));
             if (rewardBalance > 0) {
-                // @todo -- swap reward for asset
+                _enableAuction(rewardToken, address(asset));
             }
         }
+    }
+
+    /// @inheritdoc AuctionSwapper
+    function _postTake(
+        address, // _token
+        uint256, // _amountTaken
+        uint256 // _amountPayed
+    ) internal override {
+        uint256 toDeploy = Math.min(asset.balanceOf(address(this)), availableDepositLimit(address(this)));
+        if (toDeploy > 0) _deployFunds(toDeploy);
     }
 
     /*//////////////////////////////////////////////////////////////

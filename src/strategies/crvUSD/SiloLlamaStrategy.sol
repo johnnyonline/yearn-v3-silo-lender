@@ -191,7 +191,7 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
      */
     function _claimAndSellRewards() internal {
         address[] memory assets = new address[](1);
-        assets[0] = address(asset);
+        assets[0] = address(share);
         incentivesController.claimRewards(
             assets,
             type(uint256).max,

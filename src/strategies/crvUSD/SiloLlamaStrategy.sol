@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.18;
 
-import {BaseStrategy, ERC20} from "@tokenized-strategy/BaseStrategy.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// Import interfaces for many popular DeFi projects, or add your own!
-//import "../interfaces/<protocol>/<Interface>.sol";
+import {BaseStrategy, ERC20} from "@tokenized-strategy/BaseStrategy.sol";
+
+import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
+import {ISilo} from "@silo/interfaces/ISilo.sol";
 
 /**
  * The `TokenizedStrategy` variable can be used to retrieve the strategies
@@ -20,13 +22,46 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 // NOTE: To implement permissioned functions you can use the onlyManagement, onlyEmergencyAuthorized and onlyKeepers modifiers
 
-contract ConicStrategy is BaseStrategy {
+contract SiloLlamaStrategy is BaseStrategy {
+
     using SafeERC20 for ERC20;
 
+    /**
+     * @dev @todo
+     */
+    address[] internal rewardTokens;
+
+    /**
+     * @dev @todo
+     */
+    IAaveIncentivesController internal immutable incentivesController;
+
+    /**
+     * @dev @todo
+     */
+    ISilo internal immutable silo;
+
+    /**
+     * @dev @todo
+     */
+    ERC20 internal immutable share;
+
     constructor(
+        address _incentivesController,
+        address _silo,
+        address _share,
         address _asset,
+        address[] memory _rewardTokens,
         string memory _name
-    ) BaseStrategy(_asset, _name) {}
+    ) BaseStrategy(_asset, _name) {
+        incentivesController = IAaveIncentivesController(_incentivesController);
+        silo = ISilo(_silo);
+        share = ERC20(_share);
+
+        rewardTokens = _rewardTokens;
+
+        ERC20(_asset).forceApprove(_silo, type(uint256).max);
+    }
 
     /*//////////////////////////////////////////////////////////////
                 NEEDED TO BE OVERRIDDEN BY STRATEGIST
@@ -44,9 +79,11 @@ contract ConicStrategy is BaseStrategy {
      * to deposit in the yield source.
      */
     function _deployFunds(uint256 _amount) internal override {
-        // TODO: implement deposit logic EX:
-        //
-        //      lendingPool.deposit(address(asset), _amount ,0);
+        silo.deposit(
+            address(asset),
+            _amount,
+            false
+        );
     }
 
     /**
@@ -71,9 +108,11 @@ contract ConicStrategy is BaseStrategy {
      * @param _amount, The amount of 'asset' to be freed.
      */
     function _freeFunds(uint256 _amount) internal override {
-        // TODO: implement withdraw logic EX:
-        //
-        //      lendingPool.withdraw(address(asset), _amount);
+        silo.withdraw(
+            address(asset),
+            _amount,
+            false
+        );
     }
 
     /**
@@ -103,14 +142,51 @@ contract ConicStrategy is BaseStrategy {
         override
         returns (uint256 _totalAssets)
     {
-        // TODO: Implement harvesting logic and accurate accounting EX:
-        //
-        //      if(!TokenizedStrategy.isShutdown()) {
-        //          _claimAndSellRewards();
-        //      }
-        //      _totalAssets = aToken.balanceOf(address(this)) + asset.balanceOf(address(this));
-        //
-        _totalAssets = asset.balanceOf(address(this));
+        // Only harvest and redeploy if the strategy is not shutdown.
+        if(!TokenizedStrategy.isShutdown()) {
+            // Claim all rewards and sell to asset.
+            _claimAndSellRewards();
+            
+            // Check how much we can re-deploy into the yield source.
+            uint256 toDeploy = Math.min(
+                asset.balanceOf(address(this)), 
+                availableDepositLimit(address(this))
+            );
+            
+            // If greater than 0.
+            if (toDeploy > 0) {
+                // Deposit the sold amount back into the yield source.
+                _deployFunds(toDeploy);
+            }
+        }
+        
+        // Return full balance no matter what.
+        _totalAssets = share.balanceOf(address(this)) + asset.balanceOf(address(this));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL HELPER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev @todo
+     */
+    function _claimAndSellRewards() internal {
+        address[] memory assets = new address[](1);
+        assets[0] = address(asset);
+        incentivesController.claimRewards(
+            assets,
+            type(uint256).max,
+            address(this)
+        );
+
+        for (uint256 i = 0; i < rewardTokens.length; i++) {
+            address rewardToken = rewardTokens[i];
+            uint256 rewardBalance = ERC20(rewardToken).balanceOf(address(this));
+            if (rewardBalance > 0) {
+                // @todo -- swap reward for asset
+            }
+        }
     }
 
     /*//////////////////////////////////////////////////////////////

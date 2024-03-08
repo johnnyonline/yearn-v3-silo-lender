@@ -13,3 +13,6 @@
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "lib/silo-core-v1"]
+	path = lib/silo-core-v1
+	url = https://github.com/silo-finance/silo-core-v1

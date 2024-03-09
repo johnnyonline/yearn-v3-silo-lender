@@ -16,14 +16,6 @@ RUN apt-get update \
  && forge update lib/forge-std \
  # https://github.com/paritytech/substrate/issues/1070
  && curl https://sh.rustup.rs -sSf | sh -s -- -y
-#  # install prettier
-#  && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash \
-#  && export NVM_DIR="$HOME/.nvm" \
-#  && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" \
-#  && [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" \
-#  && nvm install 18 \
-#  && nvm use 18 \
-#  && npm install -g prettier
 
 WORKDIR /amplify-contracts
 

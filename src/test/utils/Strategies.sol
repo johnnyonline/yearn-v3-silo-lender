@@ -19,15 +19,10 @@ contract Strategies {
     }
 
     function _setUpSiloLlamaStrategy() private returns (address _strategy) {
-        address[] memory _rewardTokens = new address[](2);
-        _rewardTokens[0] = address(0xD533a949740bb3306d119CC777fa900bA034cd52); // CRV
-        _rewardTokens[1] = address(0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858); // SILO
         _strategy = address(new SiloLlamaStrategy(
-            address(0x361384A0d755f972E5Eea26e4F4efBAf976B6461), // _incentivesController
             address(_crvUSDCRVSilo), // _silo
-            address(0xb27D1729489d04473631f0AFAca3c3A7389ac9F8), // _share
+            address(0x361384A0d755f972E5Eea26e4F4efBAf976B6461), // _incentivesController
             _crvUSD, // _asset
-            _rewardTokens,
             "crvUSD/CRV SiloLlamaStrategy"
         ));
     }

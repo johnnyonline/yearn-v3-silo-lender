@@ -9,6 +9,7 @@ import {AuctionSwapper, Auction} from "@periphery/swappers/AuctionSwapper.sol";
 
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
+import {IShareToken} from "@silo/interfaces/IShareToken.sol";
 import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
 
 /**
@@ -30,38 +31,46 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
     using EasyMathV2 for uint256;
 
     /**
-     * @dev @todo
+     * @dev The reward token paid by the incentives controller.
      */
-    address[] internal rewardTokens;
+    ERC20 private rewardToken;
 
     /**
-     * @dev @todo
+     * @dev The incentives controller that pays the reward token.
      */
-    IAaveIncentivesController internal immutable incentivesController;
+    IAaveIncentivesController private incentivesController;
 
     /**
-     * @dev @todo
+     * @dev The Silo that the strategy is using.
      */
-    ISilo internal immutable silo;
+    ISilo private immutable silo;
 
     /**
-     * @dev @todo
+     * @dev The share token that represents the strategy's share of the Silo.
      */
-    ERC20 internal immutable share;
+    IShareToken private immutable share;
 
     constructor(
-        address _incentivesController,
         address _silo,
-        address _share,
+        address _incentivesController,
         address _asset,
-        address[] memory _rewardTokens,
         string memory _name
     ) BaseStrategy(_asset, _name) {
-        incentivesController = IAaveIncentivesController(_incentivesController);
         silo = ISilo(_silo);
-        share = ERC20(_share);
+        share = silo.assetStorage(_asset).collateralToken;
+        require(address(share) != address(0), "wrong silo");
 
-        rewardTokens = _rewardTokens;
+        address _rewardToken;
+        if (_incentivesController != address(0)) {
+            incentivesController = IAaveIncentivesController(_incentivesController);
+            (,uint256 emissionPerSecond,) = IAaveIncentivesController(_incentivesController).getAssetData(address(share));
+            require(emissionPerSecond > 0, "no incentives");
+
+            _rewardToken = IAaveIncentivesController(_incentivesController).REWARD_TOKEN();
+        }
+
+        incentivesController = IAaveIncentivesController(_incentivesController);
+        rewardToken = ERC20(_rewardToken);
 
         ERC20(_asset).forceApprove(_silo, type(uint256).max);
     }
@@ -71,7 +80,7 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @dev @todo
+     * @dev Can enable a `postTake` hook to be triggered, so that harvested funds can be redeployed.
      */
     function setPostTakeHookFlag(bool _flag) external onlyManagement {
         Auction(auction).setHookFlags(
@@ -98,11 +107,13 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
      * to deposit in the yield source.
      */
     function _deployFunds(uint256 _amount) internal override {
-        silo.deposit(
-            address(asset),
-            _amount,
-            false
-        );
+        if(!TokenizedStrategy.isShutdown()) {
+            silo.deposit(
+                address(asset),
+                _amount,
+                false
+            );
+        }
     }
 
     /**
@@ -189,23 +200,21 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @dev @todo
+     * @dev Checks if there are any rewards to claim, and enables the auction if so.
      */
     function _claimAndSellRewards() internal {
-        address[] memory assets = new address[](1);
-        assets[0] = address(share);
-        incentivesController.claimRewards(
-            assets,
-            type(uint256).max,
-            address(this)
-        );
+        if (address(incentivesController) != address(0)) {
+            address[] memory assets = new address[](1);
+            assets[0] = address(share);
+            if (incentivesController.getRewardsBalance(assets, address(this)) > 0) {
+                incentivesController.claimRewards(
+                    assets,
+                    type(uint256).max,
+                    address(this)
+                );
 
-        uint256 rewardsTokensLength = rewardTokens.length;
-        for (uint256 i = 0; i < rewardsTokensLength; i++) {
-            address rewardToken = rewardTokens[i];
-            uint256 rewardBalance = ERC20(rewardToken).balanceOf(address(this));
-            if (rewardBalance > 0) {
-                _enableAuction(rewardToken, address(asset));
+                uint256 rewardBalance = rewardToken.balanceOf(address(this));
+                if (rewardBalance > 0) _enableAuction(address(rewardToken), address(asset));
             }
         }
     }

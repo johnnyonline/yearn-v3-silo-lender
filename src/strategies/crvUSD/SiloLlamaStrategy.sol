@@ -200,7 +200,8 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
             address(this)
         );
 
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
+        uint256 rewardsTokensLength = rewardTokens.length;
+        for (uint256 i = 0; i < rewardsTokensLength; i++) {
             address rewardToken = rewardTokens[i];
             uint256 rewardBalance = ERC20(rewardToken).balanceOf(address(this));
             if (rewardBalance > 0) {

@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "forge-std/console.sol";
 import {ExtendedTest} from "./ExtendedTest.sol";
+import {Strategies} from "./Strategies.sol";
 
 import {Strategy, ERC20} from "../../Strategy.sol";
 import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
@@ -18,7 +19,7 @@ interface IFactory {
     function set_protocol_fee_recipient(address) external;
 }
 
-contract Setup is ExtendedTest, IEvents {
+contract Setup is Strategies, ExtendedTest, IEvents {
     // Contract instances that we will use repeatedly.
     ERC20 public asset;
     IStrategyInterface public strategy;
@@ -49,7 +50,7 @@ contract Setup is ExtendedTest, IEvents {
         _setTokenAddrs();
 
         // Set asset
-        asset = ERC20(tokenAddrs["DAI"]);
+        asset = ERC20(tokenAddrs["crvUSD"]);
 
         // Set decimals
         decimals = asset.decimals();
@@ -71,7 +72,7 @@ contract Setup is ExtendedTest, IEvents {
     function setUpStrategy() public returns (address) {
         // we save the strategy as a IStrategyInterface to give it the needed interface
         IStrategyInterface _strategy = IStrategyInterface(
-            address(new Strategy(address(asset), "Tokenized Strategy"))
+            _setUpStrategy()
         );
 
         // set keeper
@@ -154,5 +155,7 @@ contract Setup is ExtendedTest, IEvents {
         tokenAddrs["USDT"] = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
         tokenAddrs["DAI"] = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         tokenAddrs["USDC"] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        tokenAddrs["CRV"] = 0xD533a949740bb3306d119CC777fa900bA034cd52;
+        tokenAddrs["crvUSD"] = 0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E;
     }
 }

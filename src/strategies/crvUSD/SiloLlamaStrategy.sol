@@ -10,6 +10,7 @@ import {AuctionSwapper, Auction} from "@periphery/swappers/AuctionSwapper.sol";
 
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
+import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
 
 /**
  * The `TokenizedStrategy` variable can be used to retrieve the strategies
@@ -27,6 +28,7 @@ import {ISilo} from "@silo/interfaces/ISilo.sol";
 contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
 
     using SafeERC20 for ERC20;
+    using EasyMathV2 for uint256;
 
     /**
      * @dev @todo
@@ -179,7 +181,11 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
         }
         
         // Return full balance no matter what.
-        _totalAssets = share.balanceOf(address(this)) + asset.balanceOf(address(this));
+        uint256 _redeemableForShares = share.balanceOf(address(this)).toAmount(
+            silo.assetStorage(address(asset)).totalDeposits,
+            share.totalSupply()
+        );
+        _totalAssets = _redeemableForShares + asset.balanceOf(address(this));
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -29,6 +29,7 @@ contract OperationTest is Setup {
 
         // Earn Interest
         skip(1 days);
+        _earnInterest();
 
         // Report profit
         vm.prank(keeper);

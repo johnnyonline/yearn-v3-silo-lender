@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import {AprOracleBase} from "@periphery/AprOracle/AprOracleBase.sol";
 
-contract StrategyAprOracle is AprOracleBase {
+contract SiloLlamaAprOracle is AprOracleBase {
     constructor() AprOracleBase("Strategy Apr Oracle Example", msg.sender) {}
 
     /**

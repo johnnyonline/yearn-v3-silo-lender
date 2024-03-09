@@ -10,6 +10,7 @@ import {AuctionSwapper, Auction} from "@periphery/swappers/AuctionSwapper.sol";
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 import {IShareToken} from "@silo/interfaces/IShareToken.sol";
+import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
 import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
 
 /**
@@ -25,7 +26,7 @@ import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
 
 // NOTE: To implement permissioned functions you can use the onlyManagement, onlyEmergencyAuthorized and onlyKeepers modifiers
 
-contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
+contract SiloStrategy is AuctionSwapper, BaseStrategy {
 
     using SafeERC20 for ERC20;
     using EasyMathV2 for uint256;
@@ -50,13 +51,21 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
      */
     IShareToken private immutable share;
 
+    /**
+     * @notice Used to initialize the strategy on deployment.
+     * @param _siloRepository The address of the SiloRepository.
+     * @param _incentivesController The address of the IncentivesController. If address(0), the strategy will not claim incentives.
+     * @param _siloAsset The address of the Silo asset. Used to retrieve the Silo address from the SiloRepository.
+     * @param _asset The address of the strategy asset.
+     */
     constructor(
-        address _silo,
+        address _siloRepository,
         address _incentivesController,
+        address _siloAsset,
         address _asset,
         string memory _name
     ) BaseStrategy(_asset, _name) {
-        silo = ISilo(_silo);
+        silo = ISilo(ISiloRepository(_siloRepository).getSilo(_siloAsset));
         share = silo.assetStorage(_asset).collateralToken;
         require(address(share) != address(0), "wrong silo");
 
@@ -72,7 +81,7 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
         incentivesController = IAaveIncentivesController(_incentivesController);
         rewardToken = ERC20(_rewardToken);
 
-        ERC20(_asset).forceApprove(_silo, type(uint256).max);
+        ERC20(_asset).forceApprove(address(silo), type(uint256).max);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -51,7 +51,7 @@ contract SiloStrategyFactory {
         address _share = address(ISilo(_silo).assetStorage(_strategyAsset).collateralToken);
         require(_share != address(0), "wrong silo");
 
-        address _rewardToken;
+        address _rewardToken = address(0);
         if (_incentivesController != address(0)) {
             _rewardToken = IAaveIncentivesController(_incentivesController).REWARD_TOKEN();
         }

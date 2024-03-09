@@ -10,7 +10,6 @@ import {AuctionSwapper, Auction} from "@periphery/swappers/AuctionSwapper.sol";
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 import {IShareToken} from "@silo/interfaces/IShareToken.sol";
-import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
 import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
 
 /**
@@ -26,6 +25,11 @@ import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
 
 // NOTE: To implement permissioned functions you can use the onlyManagement, onlyEmergencyAuthorized and onlyKeepers modifiers
 
+/**
+ * @title SiloStrategy
+ * @author johnnyonline
+ * @notice A strategy that deposits funds into a Silo and harvests incentives.
+ */
 contract SiloStrategy is AuctionSwapper, BaseStrategy {
 
     using SafeERC20 for ERC20;
@@ -34,52 +38,44 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
     /**
      * @dev The reward token paid by the incentives controller.
      */
-    ERC20 private rewardToken;
+    ERC20 public immutable rewardToken;
 
     /**
      * @dev The incentives controller that pays the reward token.
      */
-    IAaveIncentivesController private incentivesController;
+    IAaveIncentivesController public immutable incentivesController;
 
     /**
      * @dev The Silo that the strategy is using.
      */
-    ISilo private immutable silo;
+    ISilo public immutable silo;
 
     /**
      * @dev The share token that represents the strategy's share of the Silo.
      */
-    IShareToken private immutable share;
+    IShareToken public immutable share;
 
     /**
      * @notice Used to initialize the strategy on deployment.
-     * @param _siloRepository The address of the SiloRepository.
-     * @param _incentivesController The address of the IncentivesController. If address(0), the strategy will not claim incentives.
-     * @param _siloAsset The address of the Silo asset. Used to retrieve the Silo address from the SiloRepository.
-     * @param _asset The address of the strategy asset.
+     * @param _silo Address of the Silo that the strategy is using.
+     * @param _share Address of the share token that represents the strategy's share of the Silo.
+     * @param _asset Address of the underlying asset.
+     * @param _rewardToken Address of the reward token paid by the incentives controller.
+     * @param _incentivesController Address of the incentives controller that pays the reward token.
+     * @param _name Name the strategy will use.
      */
     constructor(
-        address _siloRepository,
-        address _incentivesController,
-        address _siloAsset,
+        address _silo,
+        address _share,
         address _asset,
+        address _rewardToken,
+        address _incentivesController,
         string memory _name
     ) BaseStrategy(_asset, _name) {
-        silo = ISilo(ISiloRepository(_siloRepository).getSilo(_siloAsset));
-        share = silo.assetStorage(_asset).collateralToken;
-        require(address(share) != address(0), "wrong silo");
-
-        address _rewardToken;
-        if (_incentivesController != address(0)) {
-            incentivesController = IAaveIncentivesController(_incentivesController);
-            (,uint256 emissionPerSecond,) = IAaveIncentivesController(_incentivesController).getAssetData(address(share));
-            require(emissionPerSecond > 0, "no incentives");
-
-            _rewardToken = IAaveIncentivesController(_incentivesController).REWARD_TOKEN();
-        }
-
-        incentivesController = IAaveIncentivesController(_incentivesController);
+        silo = ISilo(_silo);
+        share = IShareToken(_share);
         rewardToken = ERC20(_rewardToken);
+        incentivesController = IAaveIncentivesController(_incentivesController);
 
         ERC20(_asset).forceApprove(address(silo), type(uint256).max);
     }

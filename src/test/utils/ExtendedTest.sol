@@ -4,6 +4,13 @@ pragma solidity 0.8.18;
 import {Test} from "forge-std/Test.sol";
 
 contract ExtendedTest is Test {
+
+    // Addresses for different roles we will use repeatedly.
+    address public user = address(10);
+    address public keeper = address(4);
+    address public management = address(1);
+    address public performanceFeeRecipient = address(3);
+
     // solhint-disable-next-line
     function assertNeq(address a, address b) internal {
         if (a == b) {

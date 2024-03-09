@@ -16,7 +16,7 @@ contract OperationTest is Setup {
         assertEq(strategy.management(), management);
         assertEq(strategy.performanceFeeRecipient(), performanceFeeRecipient);
         assertEq(strategy.keeper(), keeper);
-        // TODO: add additional check on strat params
+        _testSetupStrategyOK(address(strategy));
     }
 
     function test_operation(uint256 _amount) public {

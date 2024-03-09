@@ -2,7 +2,6 @@
 pragma solidity 0.8.18;
 
 import "forge-std/console.sol";
-import {ExtendedTest} from "./ExtendedTest.sol";
 import {Strategies} from "./Strategies.sol";
 
 import {Strategy, ERC20} from "../../Strategy.sol";
@@ -19,18 +18,12 @@ interface IFactory {
     function set_protocol_fee_recipient(address) external;
 }
 
-contract Setup is Strategies, ExtendedTest, IEvents {
+contract Setup is Strategies, IEvents {
     // Contract instances that we will use repeatedly.
     ERC20 public asset;
     IStrategyInterface public strategy;
 
     mapping(string => address) public tokenAddrs;
-
-    // Addresses for different roles we will use repeatedly.
-    address public user = address(10);
-    address public keeper = address(4);
-    address public management = address(1);
-    address public performanceFeeRecipient = address(3);
 
     // Address of the real deployed Factory
     address public factory;
@@ -75,15 +68,15 @@ contract Setup is Strategies, ExtendedTest, IEvents {
             _setUpStrategy()
         );
 
+        vm.startPrank(management);
+        _strategy.acceptManagement();
+
         // set keeper
         _strategy.setKeeper(keeper);
         // set treasury
         _strategy.setPerformanceFeeRecipient(performanceFeeRecipient);
-        // set management of the strategy
-        _strategy.setPendingManagement(management);
 
-        vm.prank(management);
-        _strategy.acceptManagement();
+        vm.stopPrank();
 
         return address(_strategy);
     }

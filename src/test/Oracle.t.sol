@@ -3,14 +3,14 @@ pragma solidity ^0.8.18;
 import "forge-std/console.sol";
 import {Setup} from "./utils/Setup.sol";
 
-import {StrategyAprOracle} from "../periphery/StrategyAprOracle.sol";
+import {AprOracleBase} from "@periphery/AprOracle/AprOracleBase.sol";
 
 contract OracleTest is Setup {
-    StrategyAprOracle public oracle;
+    AprOracleBase public oracle;
 
     function setUp() public override {
         super.setUp();
-        oracle = new StrategyAprOracle();
+        oracle = _deployAprOracle();
     }
 
     function checkOracle(address _strategy, uint256 _delta) public {

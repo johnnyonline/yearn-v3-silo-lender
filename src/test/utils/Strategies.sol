@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.18;
 
+import {AprOracleBase} from "@periphery/AprOracle/AprOracleBase.sol";
+
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 
 import {SiloLlamaStrategy} from "../../strategies/crvUSD/SiloLlamaStrategy.sol";
+import {SiloLlamaAprOracle} from "../../strategies/crvUSD/SiloLlamaAprOracle.sol";
 
 contract Strategies {
 
@@ -16,6 +19,15 @@ contract Strategies {
 
     function _earnInterest() internal {
         _earnSiloLlamaInterest();
+    }
+
+    function _deployAprOracle() internal returns (AprOracleBase) {
+        return AprOracleBase(address(new SiloLlamaAprOracle(
+            address(0xBCd67f35c7A2F212db0AD7f68fC773b5aC15377c), // _siloRepository
+            _crvUSDCRVSilo, // _silo
+            _crvUSD, // _asset
+            "crvUSD/CRV SiloLlamaAprOracle"
+        )));
     }
 
     function _setUpSiloLlamaStrategy() private returns (address _strategy) {

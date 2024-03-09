@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.18;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {BaseStrategy, ERC20} from "@tokenized-strategy/BaseStrategy.sol";
@@ -168,10 +167,7 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
             _claimAndSellRewards();
             
             // Check how much we can re-deploy into the yield source.
-            uint256 toDeploy = Math.min(
-                asset.balanceOf(address(this)), 
-                availableDepositLimit(address(this))
-            );
+            uint256 toDeploy = asset.balanceOf(address(this));
             
             // If greater than 0.
             if (toDeploy > 0) {
@@ -219,7 +215,7 @@ contract SiloLlamaStrategy is AuctionSwapper, BaseStrategy {
         uint256, // _amountTaken
         uint256 // _amountPayed
     ) internal override {
-        uint256 toDeploy = Math.min(asset.balanceOf(address(this)), availableDepositLimit(address(this)));
+        uint256 toDeploy = asset.balanceOf(address(this));
         if (toDeploy > 0) _deployFunds(toDeploy);
     }
 

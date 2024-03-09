@@ -3,8 +3,23 @@ pragma solidity 0.8.18;
 
 import {AprOracleBase} from "@periphery/AprOracle/AprOracleBase.sol";
 
+import {IInterestRateModel} from "@silo/interfaces/IInterestRateModel.sol";
+import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
+import {Solvency} from "@silo/lib/Solvency.sol";
+
 contract SiloLlamaAprOracle is AprOracleBase {
-    constructor() AprOracleBase("Strategy Apr Oracle Example", msg.sender) {}
+
+    address private immutable silo;
+    address private immutable asset;
+
+    ISiloRepository private immutable siloRepository;
+
+    constructor(address _siloRepository, address _silo, address _asset, string memory _name) AprOracleBase(_name, msg.sender) {
+        siloRepository = ISiloRepository(_siloRepository);
+
+        silo = _silo;
+        asset = _asset;
+    }
 
     /**
      * @notice Will return the expected Apr of a strategy post a debt change.
@@ -29,8 +44,13 @@ contract SiloLlamaAprOracle is AprOracleBase {
         address _strategy,
         int256 _delta
     ) external view override returns (uint256) {
-        // TODO: Implement any necessary logic to return the most accurate
-        //      APR estimation for the strategy.
+        // TODO -- + CRV/SILO rewards
+        // uint256 rateBeforeFee = IInterestRateModel(siloRepository.getInterestRateModel(silo, asset)).getCurrentInterestRate(
+        //     silo,
+        //     asset, 
+        //     block.timestamp
+        // );
+        // uint256 rateAfterFee = rateBeforeFee - (rateBeforeFee * siloRepository.protocolShareFee() / Solvency._PRECISION_DECIMALS);
         return 1e17;
     }
 }

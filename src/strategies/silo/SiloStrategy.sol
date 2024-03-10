@@ -36,6 +36,11 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
     using EasyMathV2 for uint256;
 
     /**
+     * @notice Emitted when the post take hook flag is set.
+     */
+    event PostTakeHookFlagSet(bool _flag);
+
+    /**
      * @dev The reward token paid by the incentives controller.
      */
     ERC20 public immutable rewardToken;
@@ -94,6 +99,8 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
             false, // _preTake,
             _flag // _postTake
         );
+
+        emit PostTakeHookFlagSet(_flag);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -16,6 +16,20 @@ import {SiloStrategy, IAaveIncentivesController, ISilo} from "./SiloStrategy.sol
 contract SiloStrategyFactory {
 
     /**
+     * @notice Emitted when a new Silo strategy is deployed.
+     */
+    event StrategyDeployed(
+        address _management,
+        address strategy,
+        address silo,
+        address share,
+        address indexed strategyAsset,
+        address rewardToken,
+        address incentivesController,
+        string name
+    );
+
+    /**
      * @dev The Silo repository contract.
      */
     ISiloRepository public immutable repository;
@@ -66,5 +80,7 @@ contract SiloStrategyFactory {
         ));
 
         IStrategyInterface(_strategy).setPendingManagement(_management);
+
+        emit StrategyDeployed(_management, _strategy, _silo, _share, _strategyAsset, _rewardToken, _incentivesController, _name);
     }
 }

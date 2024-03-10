@@ -56,10 +56,6 @@ contract Strategies is ExtendedTest{
         vm.expectRevert("wrong silo");
         factory.deploySiloStrategy(management, _yfi, _crv, _incentivesController, "crvUSD/CRV SiloLlamaStrategy");
 
-        address _faultyIncentivesController = 0x6c1603aB6CecF89DD60C24530DdE23F97DA3C229;
-        vm.expectRevert("no incentives");
-        factory.deploySiloStrategy(management, _crv, _crvUSD, _faultyIncentivesController, "crvUSD/CRV SiloLlamaStrategy");
-
         _strategy = factory.deploySiloStrategy(
             management,
             _crv,

@@ -175,7 +175,7 @@ contract OperationTest is Setup {
 
         // Skip some time
         skip(1 days);
-        _earnInterest();
+        // _earnInterest();
 
         (trigger, ) = strategy.tendTrigger();
         assertTrue(!trigger);

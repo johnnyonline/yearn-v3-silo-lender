@@ -14,7 +14,6 @@ import {SiloStrategy, IAaveIncentivesController, ISilo} from "./SiloStrategy.sol
  * @notice Factory for creating Silo strategies
  */
 contract SiloStrategyFactory {
-
     /**
      * @notice Emitted when a new Silo strategy is deployed.
      */
@@ -39,7 +38,10 @@ contract SiloStrategyFactory {
      * @param _repository Address of the Silo repository.
      */
     constructor(ISiloRepository _repository) {
-        require(Ping.pong(_repository.siloRepositoryPing), "invalid silo repository");
+        require(
+            Ping.pong(_repository.siloRepositoryPing),
+            "invalid silo repository"
+        );
 
         repository = _repository;
     }
@@ -62,25 +64,39 @@ contract SiloStrategyFactory {
         require(_management != address(0), "invalid management");
 
         address _silo = repository.getSilo(_siloAsset);
-        address _share = address(ISilo(_silo).assetStorage(_strategyAsset).collateralToken);
+        address _share = address(
+            ISilo(_silo).assetStorage(_strategyAsset).collateralToken
+        );
         require(_share != address(0), "wrong silo");
 
         address _rewardToken = address(0);
         if (_incentivesController != address(0)) {
-            _rewardToken = IAaveIncentivesController(_incentivesController).REWARD_TOKEN();
+            _rewardToken = IAaveIncentivesController(_incentivesController)
+                .REWARD_TOKEN();
         }
 
-        _strategy = address(new SiloStrategy(
+        _strategy = address(
+            new SiloStrategy(
+                _silo,
+                _share,
+                _strategyAsset,
+                _rewardToken,
+                _incentivesController,
+                _name
+            )
+        );
+
+        IStrategyInterface(_strategy).setPendingManagement(_management);
+
+        emit StrategyDeployed(
+            _management,
+            _strategy,
             _silo,
             _share,
             _strategyAsset,
             _rewardToken,
             _incentivesController,
             _name
-        ));
-
-        IStrategyInterface(_strategy).setPendingManagement(_management);
-
-        emit StrategyDeployed(_management, _strategy, _silo, _share, _strategyAsset, _rewardToken, _incentivesController, _name);
+        );
     }
 }

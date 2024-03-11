@@ -59,7 +59,7 @@ contract OperationTest is Setup {
         uint16 _profitFactor
     ) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
-        _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_BPS));
+        _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_BPS / 10));
 
         // Deposit into strategy
         mintAndDepositIntoStrategy(strategy, user, _amount);
@@ -101,7 +101,7 @@ contract OperationTest is Setup {
         uint16 _profitFactor
     ) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
-        _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_BPS));
+        _profitFactor = uint16(bound(uint256(_profitFactor), 10, MAX_BPS / 10));
 
         // Set protocol fee to 0 and perf fee to 10%
         setFees(0, 1_000);
@@ -175,6 +175,7 @@ contract OperationTest is Setup {
 
         // Skip some time
         skip(1 days);
+        _earnInterest();
 
         (trigger, ) = strategy.tendTrigger();
         assertTrue(!trigger);

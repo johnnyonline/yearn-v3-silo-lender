@@ -3,8 +3,7 @@ pragma solidity 0.8.18;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {BaseStrategy, ERC20} from "@tokenized-strategy/BaseStrategy.sol";
-
+import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthCheck.sol";
 import {AuctionSwapper, Auction} from "@periphery/swappers/AuctionSwapper.sol";
 
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
@@ -30,8 +29,7 @@ import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
  * @author johnnyonline
  * @notice A strategy that deposits funds into a Silo and harvests incentives.
  */
-contract SiloStrategy is AuctionSwapper, BaseStrategy {
-
+contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
     using SafeERC20 for ERC20;
     using EasyMathV2 for uint256;
 
@@ -76,7 +74,7 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
         address _rewardToken,
         address _incentivesController,
         string memory _name
-    ) BaseStrategy(_asset, _name) {
+    ) BaseHealthCheck(_asset, _name) {
         silo = ISilo(_silo);
         share = IShareToken(_share);
         rewardToken = ERC20(_rewardToken);
@@ -119,12 +117,8 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
      * to deposit in the yield source.
      */
     function _deployFunds(uint256 _amount) internal override {
-        if(!TokenizedStrategy.isShutdown()) {
-            silo.deposit(
-                address(asset),
-                _amount,
-                false
-            );
+        if (!TokenizedStrategy.isShutdown()) {
+            silo.deposit(address(asset), _amount, false);
         }
     }
 
@@ -150,11 +144,7 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
      * @param _amount, The amount of 'asset' to be freed.
      */
     function _freeFunds(uint256 _amount) internal override {
-        silo.withdraw(
-            address(asset),
-            _amount,
-            false
-        );
+        silo.withdraw(address(asset), _amount, false);
     }
 
     /**
@@ -185,25 +175,25 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
         returns (uint256 _totalAssets)
     {
         // Only harvest and redeploy if the strategy is not shutdown.
-        if(!TokenizedStrategy.isShutdown()) {
+        if (!TokenizedStrategy.isShutdown()) {
             // Claim all rewards and sell to asset.
             _claimAndSellRewards();
-            
+
             // Check how much we can re-deploy into the yield source.
             uint256 toDeploy = asset.balanceOf(address(this));
-            
             // If greater than 0.
             if (toDeploy > 0) {
                 // Deposit the sold amount back into the yield source.
                 _deployFunds(toDeploy);
             }
         }
-        
+
         // Return full balance no matter what.
         uint256 _redeemableForShares = share.balanceOf(address(this)).toAmount(
             silo.assetStorage(address(asset)).totalDeposits,
             share.totalSupply()
         );
+
         _totalAssets = _redeemableForShares + asset.balanceOf(address(this));
     }
 
@@ -218,7 +208,10 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
         if (address(incentivesController) != address(0)) {
             address[] memory assets = new address[](1);
             assets[0] = address(share);
-            if (incentivesController.getRewardsBalance(assets, address(this)) > 0) {
+            if (
+                incentivesController.getRewardsBalance(assets, address(this)) >
+                0
+            ) {
                 incentivesController.claimRewards(
                     assets,
                     type(uint256).max,
@@ -226,7 +219,8 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
                 );
 
                 uint256 rewardBalance = rewardToken.balanceOf(address(this));
-                if (rewardBalance > 0) _enableAuction(address(rewardToken), address(asset));
+                if (rewardBalance > 0)
+                    _enableAuction(address(rewardToken), address(asset));
             }
         }
     }
@@ -303,8 +297,8 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
         address _owner
     ) public view override returns (uint256) {
         TODO: If desired Implement deposit limit logic and any needed state variables .
-        
-        EX:    
+
+        EX:
             uint256 totalAssets = TokenizedStrategy.totalAssets();
             return totalAssets >= depositLimit ? 0 : depositLimit - totalAssets;
     }
@@ -332,8 +326,8 @@ contract SiloStrategy is AuctionSwapper, BaseStrategy {
         address _owner
     ) public view override returns (uint256) {
         TODO: If desired Implement withdraw limit logic and any needed state variables.
-        
-        EX:    
+
+        EX:
             return asset.balanceOf(address(this));
     }
     */

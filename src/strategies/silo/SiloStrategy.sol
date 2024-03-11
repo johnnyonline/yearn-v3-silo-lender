@@ -144,7 +144,11 @@ contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
      * @param _amount, The amount of 'asset' to be freed.
      */
     function _freeFunds(uint256 _amount) internal override {
-        silo.withdraw(address(asset), _amount, false);
+        if (_amount > silo.liquidity(address(asset)))
+            _amount = silo.liquidity(address(asset));
+
+        if (_amount > 0)
+            silo.withdraw(address(asset), _amount, false);
     }
 
     /**

@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthCheck.sol";
-import {AuctionSwapper, Auction} from "@periphery/swappers/AuctionSwapper.sol";
+import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
 
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
@@ -29,14 +29,9 @@ import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
  * @author johnnyonline
  * @notice A strategy that deposits funds into a Silo and harvests incentives.
  */
-contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
+contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     using SafeERC20 for ERC20;
     using EasyMathV2 for uint256;
-
-    /**
-     * @notice Emitted when the post take hook flag is set.
-     */
-    event PostTakeHookFlagSet(bool _flag);
 
     /**
      * @dev The reward token paid by the incentives controller.
@@ -84,21 +79,21 @@ contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
     }
 
     /*//////////////////////////////////////////////////////////////
-                    EXTERNAL MANAGEMENT FUNCTIONS
+                        MANAGEMENT FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @dev Can enable a `postTake` hook to be triggered, so that harvested funds can be redeployed.
-     */
-    function setPostTakeHookFlag(bool _flag) external onlyManagement {
-        Auction(auction).setHookFlags(
-            false, // _kickable
-            false, // _kick,
-            false, // _preTake,
-            _flag // _postTake
-        );
+    function setTradeFactory(
+        address _tradeFactory,
+        address _tokenTo
+    ) external onlyManagement {
+        _setTradeFactory(_tradeFactory, _tokenTo);
+    }
 
-        emit PostTakeHookFlagSet(_flag);
+    function addTokens(
+        address[] memory _from,
+        address[] memory _to
+    ) external onlyManagement {
+        _addTokens(_from, _to);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -201,8 +196,6 @@ contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
     {
         // Only harvest and redeploy if the strategy is not shutdown.
         if (!TokenizedStrategy.isShutdown()) {
-            // Claim all rewards and sell to asset.
-            _claimAndSellRewards();
 
             // Check how much we can re-deploy into the yield source.
             uint256 toDeploy = asset.balanceOf(address(this));
@@ -222,14 +215,7 @@ contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
         _totalAssets = _redeemableForShares + asset.balanceOf(address(this));
     }
 
-    /*//////////////////////////////////////////////////////////////
-                        INTERNAL HELPER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @dev Checks if there are any rewards to claim, and enables the auction if so.
-     */
-    function _claimAndSellRewards() internal {
+    function _claimRewards() internal override {
         if (address(incentivesController) != address(0)) {
             address[] memory assets = new address[](1);
             assets[0] = address(share);
@@ -242,22 +228,8 @@ contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
                     type(uint256).max,
                     address(this)
                 );
-
-                uint256 rewardBalance = rewardToken.balanceOf(address(this));
-                if (rewardBalance > 0)
-                    _enableAuction(address(rewardToken), address(asset));
             }
         }
-    }
-
-    /// @inheritdoc AuctionSwapper
-    function _postTake(
-        address, // _token
-        uint256, // _amountTaken
-        uint256 // _amountPayed
-    ) internal override {
-        uint256 toDeploy = asset.balanceOf(address(this));
-        if (toDeploy > 0) _deployFunds(toDeploy);
     }
 
     /*//////////////////////////////////////////////////////////////

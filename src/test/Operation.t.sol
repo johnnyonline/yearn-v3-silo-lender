@@ -198,4 +198,8 @@ contract OperationTest is Setup {
         (trigger, ) = strategy.tendTrigger();
         assertTrue(!trigger);
     }
+
+    function test_customStrategyTest() public {
+        _customStrategyTest(address(strategy));
+    }
 }

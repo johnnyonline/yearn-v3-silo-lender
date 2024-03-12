@@ -106,6 +106,31 @@ contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
     //////////////////////////////////////////////////////////////*/
 
     /**
+     * @notice Gets the max amount of `asset` that can be withdrawn.
+     * @dev Defaults to an unlimited amount for any address. But can
+     * be overridden by strategists.
+     *
+     * This function will be called before any withdraw or redeem to enforce
+     * any limits desired by the strategist. This can be used for illiquid
+     * or sandwichable strategies.
+     *
+     *   EX:
+     *       return asset.balanceOf(address(this));;
+     *
+     * This does not need to take into account the `_owner`'s share balance
+     * or conversion rates from shares to assets.
+     *
+     * @param . The address that is withdrawing from the strategy.
+     * @return . The available amount that can be withdrawn in terms of `asset`
+     *
+     */
+    function availableWithdrawLimit(
+        address // _owner
+    ) public view override returns (uint256) {
+        return silo.liquidity(address(asset));
+    }
+
+    /**
      * @dev Can deploy up to '_amount' of 'asset' in the yield source.
      *
      * This function is called at the end of a {deposit} or {mint}
@@ -144,11 +169,7 @@ contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
      * @param _amount, The amount of 'asset' to be freed.
      */
     function _freeFunds(uint256 _amount) internal override {
-        if (_amount > silo.liquidity(address(asset)))
-            _amount = silo.liquidity(address(asset));
-
-        if (_amount > 0)
-            silo.withdraw(address(asset), _amount, false);
+        silo.withdraw(address(asset), _amount, false);
     }
 
     /**
@@ -305,34 +326,6 @@ contract SiloStrategy is BaseHealthCheck, AuctionSwapper {
         EX:
             uint256 totalAssets = TokenizedStrategy.totalAssets();
             return totalAssets >= depositLimit ? 0 : depositLimit - totalAssets;
-    }
-    */
-
-    /**
-     * @notice Gets the max amount of `asset` that can be withdrawn.
-     * @dev Defaults to an unlimited amount for any address. But can
-     * be overridden by strategists.
-     *
-     * This function will be called before any withdraw or redeem to enforce
-     * any limits desired by the strategist. This can be used for illiquid
-     * or sandwichable strategies.
-     *
-     *   EX:
-     *       return asset.balanceOf(address(this));;
-     *
-     * This does not need to take into account the `_owner`'s share balance
-     * or conversion rates from shares to assets.
-     *
-     * @param . The address that is withdrawing from the strategy.
-     * @return . The available amount that can be withdrawn in terms of `asset`
-     *
-    function availableWithdrawLimit(
-        address _owner
-    ) public view override returns (uint256) {
-        TODO: If desired Implement withdraw limit logic and any needed state variables.
-
-        EX:
-            return asset.balanceOf(address(this));
     }
     */
 

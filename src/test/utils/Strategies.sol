@@ -3,6 +3,8 @@ pragma solidity 0.8.18;
 
 import {ExtendedTest} from "./ExtendedTest.sol";
 
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 
@@ -21,6 +23,8 @@ contract Strategies is ExtendedTest {
         0x361384A0d755f972E5Eea26e4F4efBAf976B6461;
     address private constant _crv = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address private constant _yfi = 0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e;
+
+    address private _borrower = address(420);
 
     /*//////////////////////////////////////////////////////////////
                         GENERAL STRATEGY HELPERS
@@ -52,6 +56,10 @@ contract Strategies is ExtendedTest {
             address(_strategy.silo().assetStorage(_crvUSD).collateralToken),
             "!share"
         );
+    }
+
+    function _customStrategyTest(address strategy_) internal {
+        _testSiloNoLiquidity(strategy_);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -95,5 +103,30 @@ contract Strategies is ExtendedTest {
 
     function _earnSiloInterest() private {
         ISilo(_crvUSDCRVSilo).accrueInterest(_crvUSD);
+    }
+
+    function _testSiloNoLiquidity(address strategy_) private {
+        SiloStrategy _strategy = SiloStrategy(strategy_);
+        ISilo _silo = _strategy.silo();
+
+        uint256 _amount = 1_000_000_000 * 1e18;
+        deal(_crv, _borrower, _amount);
+
+        vm.startPrank(_borrower);
+
+        ERC20(_crv).approve(address(_silo), _amount);
+
+        _silo.deposit(
+            _crv,
+            _amount,
+            true // _collateralOnly
+        );
+
+        _silo.borrow(
+            _crvUSD,
+            ISilo(_crvUSDCRVSilo).liquidity(_crvUSD) // borrow all
+        );
+
+        assertEq(_strategy.availableWithdrawLimit(address(0)), 0, "!availableWithdrawLimit");
     }
 }

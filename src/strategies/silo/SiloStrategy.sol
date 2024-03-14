@@ -75,7 +75,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         rewardToken = ERC20(_rewardToken);
         incentivesController = IAaveIncentivesController(_incentivesController);
 
-        ERC20(_asset).forceApprove(address(silo), type(uint256).max);
+        ERC20(_asset).forceApprove(_silo, type(uint256).max);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -9,11 +9,11 @@ import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 import {SiloStrategy, IAaveIncentivesController, ISilo} from "./SiloStrategy.sol";
 
 /**
- * @title LlamaLendStrategyFactory
+ * @title LlammaLendStrategyFactory
  * @author johnnyonline
  * @notice Factory for creating Llamalend strategies
  */
-contract LlamaLendStrategyFactory {
+contract LlammaLendStrategyFactory {
     /**
      * @notice Emitted when a new Silo strategy is deployed.
      */

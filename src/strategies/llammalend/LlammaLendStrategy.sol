@@ -21,18 +21,13 @@ import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
 // NOTE: To implement permissioned functions you can use the onlyManagement, onlyEmergencyAuthorized and onlyKeepers modifiers
 
 /**
- * @title LlamaLendStrategy
+ * @title LlammaLendStrategy
  * @author johnnyonline
  * @notice A strategy that deposits funds into a Llamalend Vault and harvests incentives.
  */
-contract LlamaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
-    using SafeERC20 for ERC20;
-    using EasyMathV2 for uint256;
+contract LlammaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
 
-    // /**
-    //  * @dev The reward token paid by the incentives controller.
-    //  */
-    // ERC20 public immutable rewardToken;
+    using SafeERC20 for ERC20;
 
     /**
      * @dev The LlamaLend Vault the strategy is using.
@@ -101,7 +96,7 @@ contract LlamaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
     function availableWithdrawLimit(
         address // _owner
     ) public view override returns (uint256) {
-        return silo.liquidity(address(asset));
+        return // @todo
     }
 
     /**
@@ -117,7 +112,7 @@ contract LlamaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
      */
     function _deployFunds(uint256 _amount) internal override {
         if (!TokenizedStrategy.isShutdown()) {
-            silo.deposit(address(asset), _amount, false);
+            vault.deposit(_amount, address(this));
         }
     }
 
@@ -143,7 +138,7 @@ contract LlamaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param _amount, The amount of 'asset' to be freed.
      */
     function _freeFunds(uint256 _amount) internal override {
-        silo.withdraw(address(asset), _amount, false);
+        vault.withdraw(_amount, address(this), address(this));
     }
 
     /**
@@ -186,29 +181,29 @@ contract LlamaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
         }
 
         // Return full balance no matter what.
-        uint256 _redeemableForShares = share.balanceOf(address(this)).toAmount(
-            silo.assetStorage(address(asset)).totalDeposits,
-            share.totalSupply()
+        uint256 _redeemableForShares = vault.previewRedeem(
+            vault.balanceOf(address(this))
         );
 
         _totalAssets = _redeemableForShares + asset.balanceOf(address(this));
     }
 
     function _claimRewards() internal override {
-        if (address(incentivesController) != address(0)) {
-            address[] memory assets = new address[](1);
-            assets[0] = address(share);
-            if (
-                incentivesController.getRewardsBalance(assets, address(this)) >
-                0
-            ) {
-                incentivesController.claimRewards(
-                    assets,
-                    type(uint256).max,
-                    address(this)
-                );
-            }
-        }
+        // if (address(incentivesController) != address(0)) {
+        //     address[] memory assets = new address[](1);
+        //     assets[0] = address(share);
+        //     if (
+        //         incentivesController.getRewardsBalance(assets, address(this)) >
+        //         0
+        //     ) {
+        //         incentivesController.claimRewards(
+        //             assets,
+        //             type(uint256).max,
+        //             address(this)
+        //         );
+        //     }
+        // }
+        // @todo
     }
 
     /*//////////////////////////////////////////////////////////////

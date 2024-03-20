@@ -7,6 +7,9 @@ import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthCheck.sol";
 import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
 
+import {IController} from "./interfaces/IController.sol";
+import {ILiquidityGauge} from "./interfaces/ILiquidityGauge.sol";
+
 /**
  * The `TokenizedStrategy` variable can be used to retrieve the strategies
  * specific storage data your contract.
@@ -23,7 +26,8 @@ import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
 /**
  * @title LlammaLendStrategy
  * @author johnnyonline
- * @notice A strategy that deposits funds into a Llamalend Vault and harvests incentives.
+ * @notice A strategy that provides liquidity to a Llammalend Vault, deposits LP tokens in the respective liquidity gauge
+            and harvests incentives.
  */
 contract LlammaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
 
@@ -35,19 +39,32 @@ contract LlammaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
     IERC4626 public immutable vault;
 
     /**
+     * @dev The LlamaLend Controller the strategy is using.
+     */
+    IController public immutable controller;
+
+    /**
+     * @dev The LlamaLend Liquidity Gauge the LlammaLend Vault is using.
+     */
+    ILiquidityGauge public immutable liquidityGauge;
+
+    /**
      * @notice Used to initialize the strategy on deployment.
-     * @param _vault Address of the LlamaLend Vault.
      * @param _asset Address of the underlying asset.
+     * @param _vault Address of the LlamaLend Vault.
+     * @param _controller Address of the LlamaLend controller.
      * @param _name Name the strategy will use.
      */
     constructor(
-        address _vault,
         address _asset,
-        // address _rewardToken,
-        // address _incentivesController,
+        address _vault,
+        address _controller,
+        address _liquidityGauge,
         string memory _name
     ) BaseHealthCheck(_asset, _name) {
         vault = IERC4626(_vault);
+        controller = IController(_controller);
+        liquidityGauge = ILiquidityGauge(_liquidityGauge);
 
         ERC20(_asset).forceApprove(address(_vault), type(uint256).max);
     }
@@ -96,7 +113,8 @@ contract LlammaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
     function availableWithdrawLimit(
         address // _owner
     ) public view override returns (uint256) {
-        return // @todo
+        controller.check_lock();
+        return asset.balanceOf(address(controller));
     }
 
     /**
@@ -174,36 +192,39 @@ contract LlammaLendStrategy is BaseHealthCheck, TradeFactorySwapper {
             // Check how much we can re-deploy into the yield source.
             uint256 toDeploy = asset.balanceOf(address(this));
             // If greater than 0.
-            if (toDeploy > 0) {
+            if (toDeploy > 0)
                 // Deposit the sold amount back into the yield source.
                 _deployFunds(toDeploy);
-            }
+
+            // Check how much we can re-deploy into the liquidity gauge.
+            uint256 toDeployInLiquidityGauge = vault.balanceOf(address(this));
+            if (toDeployInLiquidityGauge > 0 && address(liquidityGauge) != address(0)) 
+                // Deposit the LP tokens in the liquidity gauge.
+                liquidityGauge.deposit(toDeployInLiquidityGauge, address(this));
         }
 
         // Return full balance no matter what.
         uint256 _redeemableForShares = vault.previewRedeem(
-            vault.balanceOf(address(this))
+            vault.balanceOf(address(this)) + liquidityGauge.balanceOf(address(this))
         );
 
         _totalAssets = _redeemableForShares + asset.balanceOf(address(this));
     }
 
     function _claimRewards() internal override {
-        // if (address(incentivesController) != address(0)) {
-        //     address[] memory assets = new address[](1);
-        //     assets[0] = address(share);
-        //     if (
-        //         incentivesController.getRewardsBalance(assets, address(this)) >
-        //         0
-        //     ) {
-        //         incentivesController.claimRewards(
-        //             assets,
-        //             type(uint256).max,
-        //             address(this)
-        //         );
-        //     }
-        // }
-        // @todo
+        if (address(liquidityGauge) != address(0)) {
+            bool _shouldClaim = false;
+            address[] memory rewardTokens_ = rewardTokens();
+            for (uint256 i; i < rewardTokens_.length; ++i) {
+                if (liquidityGauge.claimableReward(address(this), rewardTokens_[i]) > 0) {
+                    _shouldClaim = true;
+                    break;
+                }
+            }
+
+            if (_shouldClaim) 
+                liquidityGauge.claimRewards(address(this), address(this));
+        }
     }
 
     /*//////////////////////////////////////////////////////////////

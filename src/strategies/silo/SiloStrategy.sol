@@ -102,31 +102,6 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @notice Gets the max amount of `asset` that can be withdrawn.
-     * @dev Defaults to an unlimited amount for any address. But can
-     * be overridden by strategists.
-     *
-     * This function will be called before any withdraw or redeem to enforce
-     * any limits desired by the strategist. This can be used for illiquid
-     * or sandwichable strategies.
-     *
-     *   EX:
-     *       return asset.balanceOf(address(this));;
-     *
-     * This does not need to take into account the `_owner`'s share balance
-     * or conversion rates from shares to assets.
-     *
-     * @param . The address that is withdrawing from the strategy.
-     * @return . The available amount that can be withdrawn in terms of `asset`
-     *
-     */
-    function availableWithdrawLimit(
-        address // _owner
-    ) public view override returns (uint256) {
-        return asset.balanceOf(address(this)) + silo.liquidity(address(asset));
-    }
-
-    /**
      * @dev Can deploy up to '_amount' of 'asset' in the yield source.
      *
      * This function is called at the end of a {deposit} or {mint}
@@ -289,6 +264,31 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
             return totalAssets >= depositLimit ? 0 : depositLimit - totalAssets;
     }
     */
+
+    /**
+     * @notice Gets the max amount of `asset` that can be withdrawn.
+     * @dev Defaults to an unlimited amount for any address. But can
+     * be overridden by strategists.
+     *
+     * This function will be called before any withdraw or redeem to enforce
+     * any limits desired by the strategist. This can be used for illiquid
+     * or sandwichable strategies.
+     *
+     *   EX:
+     *       return asset.balanceOf(address(this));;
+     *
+     * This does not need to take into account the `_owner`'s share balance
+     * or conversion rates from shares to assets.
+     *
+     * @param . The address that is withdrawing from the strategy.
+     * @return . The available amount that can be withdrawn in terms of `asset`
+     *
+     */
+    function availableWithdrawLimit(
+        address // _owner
+    ) public view override returns (uint256) {
+        return asset.balanceOf(address(this)) + silo.liquidity(address(asset));
+    }
 
     /**
      * @dev Optional function for a strategist to override that will

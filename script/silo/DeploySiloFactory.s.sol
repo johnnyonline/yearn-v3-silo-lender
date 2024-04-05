@@ -10,6 +10,10 @@ import "forge-std/Script.sol";
 // ---- Usage ----
 // forge script script/silo/DeploySiloFactory.s.sol:DeploySiloFactory --verify --legacy --rpc-url $RPC_URL --broadcast
 
+// verify:
+// --constructor-args $(cast abi-encode "constructor(address,address,address,address,address,string)" 0xae1Eb69e880670Ca47C50C9CE712eC2B48FaC3b6 0x00CcE18E859aCdDe4c949852E67c20510F2768a5 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8 0x912CE59144191C1204E64559FE8253a0e49E6548 0xd592F705bDC8C1B439Bd4D665Ed99C4FaAd5A680 "USDC.e/SILO Silo LP")
+// forge verify-contract --etherscan-api-key $KEY --watch --chain-id 42161 --compiler-version v0.8.18+commit.87f61d96 --verifier-url https://api.arbiscan.io/api 0x3FfA0C3fba4Adfe2b6e4D7E2f8E6e6324bE5305B src/ERC404/BaseERC404.sol:BaseERC404
+
 contract DeploySiloFactory is Script {
 
     ISiloRepository private constant REPO = ISiloRepository(0x8658047e48CC09161f4152c79155Dac1d710Ff0a); // https://devdocs.silo.finance/security/smart-contracts#silo-arbitrum

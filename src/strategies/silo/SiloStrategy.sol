@@ -137,9 +137,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * to deposit in the yield source.
      */
     function _deployFunds(uint256 _amount) internal override {
-        if (!TokenizedStrategy.isShutdown()) {
-            silo.deposit(address(asset), _amount, false);
-        }
+        silo.deposit(address(asset), _amount, false);
     }
 
     /**

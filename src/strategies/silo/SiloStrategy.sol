@@ -122,7 +122,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     function availableWithdrawLimit(
         address // _owner
     ) public view override returns (uint256) {
-        return silo.liquidity(address(asset));
+        return asset.balanceOf(address(this)) + silo.liquidity(address(asset));
     }
 
     /**

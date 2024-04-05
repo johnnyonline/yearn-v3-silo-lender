@@ -75,11 +75,8 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
                         MANAGEMENT FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function setTradeFactory(
-        address _tradeFactory,
-        address _tokenTo
-    ) external onlyManagement {
-        _setTradeFactory(_tradeFactory, _tokenTo);
+    function setTradeFactory(address _tradeFactory) external onlyManagement {
+        _setTradeFactory(_tradeFactory, address(asset));
     }
 
     function addTokens(

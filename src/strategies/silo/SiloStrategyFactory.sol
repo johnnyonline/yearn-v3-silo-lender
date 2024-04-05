@@ -23,7 +23,6 @@ contract SiloStrategyFactory {
         address silo,
         address share,
         address indexed strategyAsset,
-        address rewardToken,
         address incentivesController,
         string name
     );
@@ -69,18 +68,11 @@ contract SiloStrategyFactory {
         );
         require(_share != address(0), "wrong silo");
 
-        address _rewardToken = address(0);
-        if (_incentivesController != address(0)) {
-            _rewardToken = IAaveIncentivesController(_incentivesController)
-                .REWARD_TOKEN();
-        }
-
         _strategy = address(
             new SiloStrategy(
                 _silo,
                 _share,
                 _strategyAsset,
-                _rewardToken,
                 _incentivesController,
                 _name
             )
@@ -94,7 +86,6 @@ contract SiloStrategyFactory {
             _silo,
             _share,
             _strategyAsset,
-            _rewardToken,
             _incentivesController,
             _name
         );

@@ -35,11 +35,6 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     using EasyMathV2 for uint256;
 
     /**
-     * @dev The reward token paid by the incentives controller.
-     */
-    ERC20 public immutable rewardToken;
-
-    /**
      * @dev The incentives controller that pays the reward token.
      */
     IAaveIncentivesController public immutable incentivesController;
@@ -59,7 +54,6 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param _silo Address of the Silo that the strategy is using.
      * @param _share Address of the share token that represents the strategy's share of the Silo.
      * @param _asset Address of the underlying asset.
-     * @param _rewardToken Address of the reward token paid by the incentives controller.
      * @param _incentivesController Address of the incentives controller that pays the reward token.
      * @param _name Name the strategy will use.
      */
@@ -67,13 +61,11 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         address _silo,
         address _share,
         address _asset,
-        address _rewardToken,
         address _incentivesController,
         string memory _name
     ) BaseHealthCheck(_asset, _name) {
         silo = ISilo(_silo);
         share = IShareToken(_share);
-        rewardToken = ERC20(_rewardToken);
         incentivesController = IAaveIncentivesController(_incentivesController);
 
         ERC20(_asset).forceApprove(_silo, type(uint256).max);
@@ -254,6 +246,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param . The address that is depositing into the strategy.
      * @return . The available amount the `_owner` can deposit in terms of `asset`
      *
+     
     function availableDepositLimit(
         address _owner
     ) public view override returns (uint256) {

@@ -41,11 +41,6 @@ contract Strategies is ExtendedTest {
     function _testSetupStrategyOK(address strategy_) internal {
         SiloStrategy _strategy = SiloStrategy(strategy_);
         assertEq(
-            address(_strategy.rewardToken()),
-            _strategy.incentivesController().REWARD_TOKEN(),
-            "!rewardToken"
-        );
-        assertEq(
             address(_strategy.incentivesController()),
             _incentivesController,
             "!incentivesController"

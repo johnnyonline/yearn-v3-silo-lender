@@ -217,16 +217,11 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         if (address(incentivesController) != address(0)) {
             address[] memory assets = new address[](1);
             assets[0] = address(share);
-            if (
-                incentivesController.getRewardsBalance(assets, address(this)) >
-                0
-            ) {
-                incentivesController.claimRewards(
-                    assets,
-                    type(uint256).max,
-                    address(this)
-                );
-            }
+            incentivesController.claimRewards(
+                assets,
+                type(uint256).max,
+                address(this)
+            );
         }
     }
 

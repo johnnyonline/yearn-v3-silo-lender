@@ -39,5 +39,67 @@ contract ShutdownTest is Setup {
         );
     }
 
-    // TODO: Add tests for any emergency function added.
+    function test_shutdownCanEmergencyWithdrawFullAmount(uint256 _amount) public {
+        vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
+
+        // Deposit into strategy
+        mintAndDepositIntoStrategy(strategy, user, _amount);
+
+        assertEq(strategy.totalAssets(), _amount, "!totalAssets");
+
+        // Earn Interest
+        skip(1 days);
+        _earnInterest();
+
+        // Shutdown the strategy
+        vm.prank(management);
+        strategy.shutdownStrategy();
+
+        assertEq(strategy.totalAssets(), _amount, "!totalAssets");
+
+        // Make sure management can free funds
+        uint256 balanceBefore = asset.balanceOf(address(strategy));
+
+        // Free all funds
+        vm.prank(management);
+        strategy.emergencyWithdraw(type(uint256).max);
+
+        assertGe(
+            asset.balanceOf(address(strategy)),
+            balanceBefore + _amount,
+            "!final balance"
+        );
+    }
+
+    function test_shutdownCanEmergencyWithdrawHalfAmount(uint256 _amount) public {
+        vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
+
+        // Deposit into strategy
+        mintAndDepositIntoStrategy(strategy, user, _amount);
+
+        assertEq(strategy.totalAssets(), _amount, "!totalAssets");
+
+        // Earn Interest
+        skip(1 days);
+        _earnInterest();
+
+        // Shutdown the strategy
+        vm.prank(management);
+        strategy.shutdownStrategy();
+
+        assertEq(strategy.totalAssets(), _amount, "!totalAssets");
+
+        // Make sure management can free funds
+        uint256 balanceBefore = asset.balanceOf(address(strategy));
+
+        // Free half of the funds
+        vm.prank(management);
+        strategy.emergencyWithdraw(_amount / 2);
+
+        assertGe(
+            asset.balanceOf(address(strategy)),
+            balanceBefore + (_amount / 2),
+            "!final balance"
+        );
+    }
 }

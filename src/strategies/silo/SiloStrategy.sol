@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthCheck.sol";
 import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
@@ -205,12 +206,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         }
 
         // Return full balance no matter what.
-        uint256 _redeemableForShares = share.balanceOf(address(this)).toAmount(
-            silo.assetStorage(address(asset)).totalDeposits,
-            share.totalSupply()
-        );
-
-        _totalAssets = _redeemableForShares + asset.balanceOf(address(this));
+        _totalAssets = _redeemableForShares() + asset.balanceOf(address(this));
     }
 
     function _claimRewards() internal override {
@@ -315,13 +311,21 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      *
      * @param _amount The amount of asset to attempt to free.
      *
+     */
     function _emergencyWithdraw(uint256 _amount) internal override {
-        TODO: If desired implement simple logic to free deployed funds.
-
-        EX:
-            _amount = min(_amount, aToken.balanceOf(address(this)));
-            _freeFunds(_amount);
+        _freeFunds(
+            Math.min(
+                _amount,
+                _redeemableForShares()
+            )
+        );
     }
 
-    */
+    /*//////////////////////////////////////////////////////////////
+                            INTERNAL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _redeemableForShares() internal view returns (uint256) {
+        return share.balanceOf(address(this)).toAmount(silo.assetStorage(address(asset)).totalDeposits, share.totalSupply());
+    }
 }

@@ -6,7 +6,7 @@ import {Ping} from "@silo/lib/Ping.sol";
 
 import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 
-import {SiloStrategy, IAaveIncentivesController, ISilo} from "./SiloStrategy.sol";
+import {SiloStrategy, ISilo} from "./SiloStrategy.sol";
 
 /**
  * @title SiloStrategyFactory

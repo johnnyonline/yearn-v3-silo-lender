@@ -28,21 +28,43 @@ contract SiloStrategyFactory {
     );
 
     /**
+     * @dev The management address.
+     */
+    address public management;
+
+    /**
+     * @dev The performance fee recipient.
+     */
+    address public performanceFeeRecipient;
+
+    /**
      * @dev The Silo repository contract.
      */
     ISiloRepository public immutable repository;
 
     /**
+     * @dev Performance fee charged on the strategy.
+     */
+    uint16 public constant FEE = 1_000; // 10%
+
+    /**
      * @notice Used to initialize the strategy factory on deployment.
      * @param _repository Address of the Silo repository.
+     * @param _management Address of the management account.
+     * @param _performanceFeeRecipient Address of the performance fee recipient.
      */
-    constructor(ISiloRepository _repository) {
-        require(
-            Ping.pong(_repository.siloRepositoryPing),
-            "invalid silo repository"
-        );
+    constructor(ISiloRepository _repository, address _management, address _performanceFeeRecipient) {
+        require(Ping.pong(_repository.siloRepositoryPing), "invalid silo repository");
+        require(_management != address(0), "invalid management");
 
         repository = _repository;
+        management = _management;
+        performanceFeeRecipient = _performanceFeeRecipient;
+    }
+
+    modifier onlyManagement() {
+        require(msg.sender == management, "!management");
+        _;
     }
 
     /**
@@ -59,8 +81,7 @@ contract SiloStrategyFactory {
         address _strategyAsset,
         address _incentivesController,
         string memory _name
-    ) external returns (address _strategy) {
-        require(_management != address(0), "invalid management");
+    ) external returns (IStrategyInterface _strategy) {
 
         address _silo = repository.getSilo(_siloAsset);
         address _share = address(
@@ -68,7 +89,7 @@ contract SiloStrategyFactory {
         );
         require(_share != address(0), "wrong silo");
 
-        _strategy = address(
+        _strategy = IStrategyInterface(address(
             new SiloStrategy(
                 _silo,
                 _share,
@@ -76,18 +97,42 @@ contract SiloStrategyFactory {
                 _incentivesController,
                 _name
             )
-        );
+        ));
 
-        IStrategyInterface(_strategy).setPendingManagement(_management);
+        _strategy.setPerformanceFeeRecipient(performanceFeeRecipient);
+        _strategy.setPerformanceFee(FEE);
+        _strategy.setPendingManagement(_management);
 
         emit StrategyDeployed(
             _management,
-            _strategy,
+            address(_strategy),
             _silo,
             _share,
             _strategyAsset,
             _incentivesController,
             _name
         );
+    }
+
+    /**
+     * @notice Set the management address.
+     * @dev This is the address that can call the management functions.
+     * @param _management The address to set as the management address.
+     */
+    function setManagement(address _management) external onlyManagement {
+        require(_management != address(0), "ZERO_ADDRESS");
+        management = _management;
+    }
+
+    /**
+     * @notice Set the performance fee recipient address.
+     * @dev This is the address that will receive the performance fee.
+     * @param _performanceFeeRecipient The address to set as the performance fee recipient address.
+     */
+    function setPerformanceFeeRecipient(
+        address _performanceFeeRecipient
+    ) external onlyManagement {
+        require(_performanceFeeRecipient != address(0), "ZERO_ADDRESS");
+        performanceFeeRecipient = _performanceFeeRecipient;
     }
 }

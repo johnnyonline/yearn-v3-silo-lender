@@ -8,9 +8,9 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 
-import {SiloStrategyFactory, SiloStrategy} from "../../strategies/silo/SiloStrategyFactory.sol";
+import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 
-import {Test} from "forge-std/Test.sol";
+import {SiloStrategyFactory, SiloStrategy} from "../../strategies/silo/SiloStrategyFactory.sol";
 
 contract Strategies is ExtendedTest {
     address private constant _crvUSDCRVSilo =
@@ -51,6 +51,16 @@ contract Strategies is ExtendedTest {
             address(_strategy.silo().assetStorage(_crvUSD).collateralToken),
             "!share"
         );
+        assertEq(
+            IStrategyInterface(address(_strategy)).performanceFeeRecipient(),
+            performanceFeeRecipient,
+            "!performanceFeeRecipient"
+        );
+        assertEq(
+            IStrategyInterface(address(_strategy)).performanceFee(),
+            1_000,
+            "!performanceFee"
+        );
     }
 
     function _customStrategyTest(address strategy_) internal {
@@ -63,10 +73,16 @@ contract Strategies is ExtendedTest {
 
     function _setUpSiloStrategy() private returns (address _strategy) {
         vm.expectRevert("invalid silo repository");
-        new SiloStrategyFactory(ISiloRepository(address(0)));
+        new SiloStrategyFactory(
+            ISiloRepository(address(0)),
+            management,
+            performanceFeeRecipient
+        );
 
         SiloStrategyFactory factory = new SiloStrategyFactory(
-            ISiloRepository(_siloRepository)
+            ISiloRepository(_siloRepository),
+            management,
+            performanceFeeRecipient
         );
 
         vm.expectRevert("wrong silo");
@@ -87,13 +103,13 @@ contract Strategies is ExtendedTest {
             "crvUSD/CRV SiloLlamaStrategy"
         );
 
-        _strategy = factory.deploySiloStrategy(
+        _strategy = address(factory.deploySiloStrategy(
             management,
             _crv,
             _crvUSD,
             _incentivesController,
             "crvUSD/CRV SiloLlamaStrategy"
-        );
+        ));
     }
 
     function _earnSiloInterest() private {

@@ -16,12 +16,15 @@ import "forge-std/Script.sol";
 
 contract DeploySiloFactory is Script {
 
-    ISiloRepository private constant REPO = ISiloRepository(0x8658047e48CC09161f4152c79155Dac1d710Ff0a); // https://devdocs.silo.finance/security/smart-contracts#silo-arbitrum
+    address private constant MANAGEMENT = address(0); // TODO mainnet msig
+    address private constant PERFORMANCE_FEE_RECIPIENT = 0x5C1E6bA712e9FC3399Ee7d5824B6Ec68A0363C02; // artemis wallet
+
+    ISiloRepository private constant REPO = ISiloRepository(0xBCd67f35c7A2F212db0AD7f68fC773b5aC15377c); // https://devdocs.silo.finance/security/smart-contracts#silo-llama-ethereum
 
     function run() external {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-        SiloStrategyFactory _factory = new SiloStrategyFactory(REPO);
+        SiloStrategyFactory _factory = new SiloStrategyFactory(REPO, MANAGEMENT, PERFORMANCE_FEE_RECIPIENT);
 
         console.log("-----------------------------");
         console.log("factory deployed at: ", address(_factory));

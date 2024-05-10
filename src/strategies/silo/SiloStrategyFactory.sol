@@ -43,11 +43,6 @@ contract SiloStrategyFactory {
     ISiloRepository public immutable repository;
 
     /**
-     * @dev Performance fee charged on the strategy.
-     */
-    uint16 public constant FEE = 1_000; // 10%
-
-    /**
      * @notice Used to initialize the strategy factory on deployment.
      * @param _repository Address of the Silo repository.
      * @param _management Address of the management account.
@@ -100,7 +95,6 @@ contract SiloStrategyFactory {
         ));
 
         _strategy.setPerformanceFeeRecipient(performanceFeeRecipient);
-        _strategy.setPerformanceFee(FEE);
         _strategy.setPendingManagement(_management);
 
         emit StrategyDeployed(

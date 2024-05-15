@@ -1,3 +1,7 @@
+------------ NOTES ------------
+
+poolpi deployments - https://hackmd.io/qyPSHxCWT-G4jfMvAPzSqg
+
 ------------ Mainnet ------------
 
 Vaults:

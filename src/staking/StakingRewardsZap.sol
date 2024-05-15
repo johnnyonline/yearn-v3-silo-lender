@@ -10,7 +10,7 @@ import {IRegistry} from "./interfaces/IRegistry.sol";
 
 /**
  * @dev This would be equivalent to StakingRewardsZap.sol (https://etherscan.io/address/0x37F350DC357222E823620d473d0289C12e1AcCDC),
- *  except for updating the OZ libraries and downgrading the Solidity version from 0.8.19 to 0.8.18.
+ *  except for downgrading the Solidity version from 0.8.19 to 0.8.18.
  */
 contract StakingRewardsZap is Ownable {
     using SafeERC20 for IERC20;

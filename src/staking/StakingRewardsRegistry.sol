@@ -110,8 +110,7 @@ contract StakingRewardsRegistry is Ownable2Step {
         IStakingRewards stakingRewards = IStakingRewards(_stakingPool);
 
         // check that gov is correct on the staking contract
-        address poolGov = stakingRewards.owner();
-        require(approvedPoolOwner[poolGov], "not allowed pool owner");
+        require(approvedPoolOwner[stakingRewards.owner()], "not allowed pool owner");
 
         // make sure we didn't mess up our token/staking pool match
         require(

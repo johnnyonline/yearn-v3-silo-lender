@@ -17,8 +17,6 @@ import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
  *  This work builds on that of Synthetix (StakingRewards.sol) and CurveFi (MultiRewards.sol).
  *  Synthetix info: https://docs.synthetix.io/contracts/source/contracts/stakingrewards
  *  Curve MultiRewards: https://github.com/curvefi/multi-rewards/blob/master/contracts/MultiRewards.sol
- * @dev This would be equivalent to StakingRewardsMulti.sol (https://etherscan.io/address/0xc2793323b14990c1c9df7444cd5c4207ca61c258),
- *  except for downgrading the Solidity version from 0.8.19 to 0.8.18.
  */
 
 contract StakingRewardsMulti is ReentrancyGuard, Pausable {

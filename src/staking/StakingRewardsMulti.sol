@@ -46,23 +46,26 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         uint256 rewardPerTokenStored;
     }
 
+    /**
+     * @notice Bool for if this staking contract is shut down and rewards have been swept out.
+     * @dev Can only be performed at least 90 days after final reward period ends.
+     */
+    bool public isRetired;
+
+    /// @notice Will only be true on the original deployed contract and not on clones; we don't want to clone a clone.
+    bool public isOriginal = true;
+
+    /// @notice The address of our staking token.
+    IERC20 public stakingToken;
+
     /// @notice The address of our reward token => reward info.
     mapping(address => Reward) public rewardData;
 
     /// @notice Array containing the addresses of all of our reward tokens.
     address[] public rewardTokens;
 
-    /// @notice The address of our staking token.
-    IERC20 public stakingToken;
-
     /// @notice Zap contract can execute arbitrary logic before stake and after withdraw for our stakingToken.
     address public zapContract;
-
-    /**
-     * @notice Bool for if this staking contract is shut down and rewards have been swept out.
-     * @dev Can only be performed at least 90 days after final reward period ends.
-     */
-    bool public isRetired;
 
     /**
      * @notice The amount of rewards allocated to a user per whole token staked.
@@ -80,9 +83,6 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
     // private vars, use view functions to see these
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
-
-    /// @notice Will only be true on the original deployed contract and not on clones; we don't want to clone a clone.
-    bool public isOriginal = true;
 
     /// @notice Owner can add rewards tokens, update zap contract, etc.
     address public owner;

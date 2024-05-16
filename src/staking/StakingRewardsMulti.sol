@@ -94,6 +94,9 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
     /// @notice Used to track the deployed version of this contract.
     string public constant stakerVersion = "1.0.0";
 
+    /// @notice Precision.
+    uint256 public constant PRECISION = 1e18;
+
     /* ========== CONSTRUCTOR ========== */
 
     constructor(address _owner, address _stakingToken, address _zapContract) {
@@ -226,7 +229,7 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
             (((lastTimeRewardApplicable(_rewardsToken) -
                 rewardData[_rewardsToken].lastUpdateTime) *
                 rewardData[_rewardsToken].rewardRate *
-                1e18) / _totalSupply);
+                PRECISION) / _totalSupply);
     }
 
     /**
@@ -247,7 +250,7 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
             (_balances[_account] *
                 (rewardPerToken(_rewardsToken) -
                     userRewardPerTokenPaid[_account][_rewardsToken])) /
-            1e18 +
+            PRECISION +
             rewards[_account][_rewardsToken];
     }
 

@@ -303,8 +303,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         require(!isRetired, "Pool retired");
 
         // add amount to total supply and user balance
-        _totalSupply = _totalSupply + _amount;
-        _balances[_recipient] = _balances[_recipient] + _amount;
+        _totalSupply += _amount;
+        _balances[_recipient] += _amount;
 
         // stake the amount, emit the event
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);

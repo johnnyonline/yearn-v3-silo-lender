@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.18;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {FixedPointMathLib} from "@solady/utils/FixedPointMathLib.sol";
+
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
@@ -201,7 +202,7 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         address _rewardsToken
     ) public view returns (uint256) {
         return
-            Math.min(block.timestamp, rewardData[_rewardsToken].periodFinish);
+            FixedPointMathLib.min(block.timestamp, rewardData[_rewardsToken].periodFinish);
     }
 
     /**

@@ -465,12 +465,11 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         address _rewardsToken,
         address _rewardsDistributor,
         uint256 _rewardsDuration
-    ) external {
+    ) external onlyOwner {
         require(
             _rewardsToken != address(0) && _rewardsDistributor != address(0),
             "No zero address"
         );
-        require(msg.sender == owner, "!authorized");
         require(_rewardsDuration > 0, "Must be >0");
         require(
             rewardData[_rewardsToken].rewardsDuration == 0,
@@ -492,12 +491,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
     function setRewardsDistributor(
         address _rewardsToken,
         address _rewardsDistributor
-    ) external {
-        require(
-            _rewardsToken != address(0) && _rewardsDistributor != address(0),
-            "No zero address"
-        );
-        require(msg.sender == owner, "!authorized");
+    ) external onlyOwner {
+        require(_rewardsToken != address(0) && _rewardsDistributor != address(0), "No zero address");
         rewardData[_rewardsToken].rewardsDistributor = _rewardsDistributor;
     }
 
@@ -526,9 +521,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
      * @dev May only be called by owner, and can't be set to zero address.
      * @param _zapContract Address of the new zap contract.
      */
-    function setZapContract(address _zapContract) external {
+    function setZapContract(address _zapContract) external onlyOwner {
         require(_zapContract != address(0), "No zero address");
-        require(msg.sender == owner, "!authorized");
         zapContract = _zapContract;
         emit ZapContractUpdated(_zapContract);
     }
@@ -538,8 +532,7 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
      *  @dev May only be called by current owner role.
      *  @param _owner Address of new owner.
      */
-    function setPendingOwner(address _owner) external {
-        require(msg.sender == owner, "!authorized");
+    function setPendingOwner(address _owner) external onlyOwner {
         pendingOwner = _owner;
     }
 
@@ -564,11 +557,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
     function recoverERC20(
         address _tokenAddress,
         uint256 _tokenAmount
-    ) external {
-        if (_tokenAddress == address(stakingToken)) {
-            revert("!staking token");
-        }
-        require(msg.sender == owner, "!authorized");
+    ) external onlyOwner {
+        if (_tokenAddress == address(stakingToken)) revert("!staking token");
 
         // can only recover reward tokens 90 days after last reward token ends
         bool isRewardToken;
@@ -617,6 +607,11 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
                     .rewardPerTokenStored;
             }
         }
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "!authorized");
         _;
     }
 

@@ -16,3 +16,6 @@
 [submodule "lib/silo-core-v1"]
 	path = lib/silo-core-v1
 	url = https://github.com/johnnyonline/silo-core-v1
+[submodule "lib/solady"]
+	path = lib/solady
+	url = https://github.com/Vectorized/solady

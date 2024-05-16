@@ -10,6 +10,7 @@ remappings = [
     "@tokenized-strategy/=lib/tokenized-strategy/src/",
     "@periphery/=lib/tokenized-strategy-periphery/src/",
     "@silo/=lib/silo-core-v1/contracts/",
+    "@solady/=lib/solady/src/",
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

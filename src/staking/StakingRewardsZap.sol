@@ -8,10 +8,6 @@ import {IVault} from "./interfaces/IVault.sol";
 import {IStakingRewards} from "./interfaces/IStakingRewards.sol";
 import {IRegistry} from "./interfaces/IRegistry.sol";
 
-/**
- * @dev This would be equivalent to StakingRewardsZap.sol (https://etherscan.io/address/0x37F350DC357222E823620d473d0289C12e1AcCDC),
- *  except for downgrading the Solidity version from 0.8.19 to 0.8.18.
- */
 contract StakingRewardsZap is Ownable {
     using SafeERC20 for IERC20;
 
@@ -60,14 +56,14 @@ contract StakingRewardsZap is Ownable {
 
         // get our underlying token
         IVault targetVault = IVault(_targetVault);
-        IERC20 underlying = IERC20(targetVault.asset());
+        IERC20 underlying = targetVault.asset();
 
         // transfer to zap and deposit underlying to vault, but first check our approvals
         _checkAllowance(_targetVault, address(underlying), _underlyingAmount);
 
         // check our before amount in case there is any loose token stuck in the zap
         uint256 beforeAmount = underlying.balanceOf(address(this));
-        underlying.transferFrom(msg.sender, address(this), _underlyingAmount);
+        underlying.safeTransferFrom(msg.sender, address(this), _underlyingAmount);
 
         // deposit only our underlying amount, make sure deposit worked
         toStake = targetVault.deposit(_underlyingAmount, address(this));
@@ -107,14 +103,14 @@ contract StakingRewardsZap is Ownable {
 
         // get our underlying token
         IVault targetVault = IVault(_targetVault);
-        IERC20 underlying = IERC20(targetVault.token());
+        IERC20 underlying = targetVault.token();
 
         // transfer to zap and deposit underlying to vault, but first check our approvals
         _checkAllowance(_targetVault, address(underlying), _underlyingAmount);
 
         // check our before amount in case there is any loose token stuck in the zap
         uint256 beforeAmount = underlying.balanceOf(address(this));
-        underlying.transferFrom(msg.sender, address(this), _underlyingAmount);
+        underlying.safeTransferFrom(msg.sender, address(this), _underlyingAmount);
 
         // deposit only our underlying amount, make sure deposit worked
         toStake = targetVault.deposit(_underlyingAmount, address(this));
@@ -158,7 +154,7 @@ contract StakingRewardsZap is Ownable {
 
         // get our underlying token
         IVault targetVault = IVault(_vault);
-        IERC20 underlying = IERC20(targetVault.asset());
+        IERC20 underlying = targetVault.asset();
 
         // check our before amount in case there is any loose token stuck in the zap
         uint256 beforeAmount = underlying.balanceOf(address(this));
@@ -176,7 +172,7 @@ contract StakingRewardsZap is Ownable {
         );
 
         // send underlying token to user
-        underlying.transfer(msg.sender, underlyingAmount);
+        underlying.safeTransfer(msg.sender, underlyingAmount);
 
         emit ZapOut(msg.sender, _vault, underlyingAmount);
     }
@@ -207,7 +203,7 @@ contract StakingRewardsZap is Ownable {
 
         // get our underlying token
         IVault targetVault = IVault(_vault);
-        IERC20 underlying = IERC20(targetVault.token());
+        IERC20 underlying = targetVault.token();
 
         // check our before amount in case there is any loose token stuck in the zap
         uint256 beforeAmount = underlying.balanceOf(address(this));
@@ -224,11 +220,12 @@ contract StakingRewardsZap is Ownable {
         );
 
         // send underlying token to user
-        underlying.transfer(msg.sender, underlyingAmount);
+        underlying.safeTransfer(msg.sender, underlyingAmount);
 
         emit ZapOut(msg.sender, _vault, underlyingAmount);
     }
 
+    // TODO: This needs to be updated to use `forceApprove`, as mentioned here https://github.com/yearn/yearn-strategies/issues/653#issuecomment-2111339562.
     function _checkAllowance(
         address _contract,
         address _token,

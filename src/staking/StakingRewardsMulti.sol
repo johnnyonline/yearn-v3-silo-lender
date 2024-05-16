@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.18;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {FixedPointMathLib} from "@solady/utils/FixedPointMathLib.sol";
+
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
@@ -16,8 +17,6 @@ import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
  *  This work builds on that of Synthetix (StakingRewards.sol) and CurveFi (MultiRewards.sol).
  *  Synthetix info: https://docs.synthetix.io/contracts/source/contracts/stakingrewards
  *  Curve MultiRewards: https://github.com/curvefi/multi-rewards/blob/master/contracts/MultiRewards.sol
- * @dev This would be equivalent to StakingRewardsMulti.sol (https://etherscan.io/address/0xc2793323b14990c1c9df7444cd5c4207ca61c258),
- *  except for downgrading the Solidity version from 0.8.19 to 0.8.18.
  */
 
 contract StakingRewardsMulti is ReentrancyGuard, Pausable {
@@ -46,23 +45,26 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         uint256 rewardPerTokenStored;
     }
 
+    /**
+     * @notice Bool for if this staking contract is shut down and rewards have been swept out.
+     * @dev Can only be performed at least 90 days after final reward period ends.
+     */
+    bool public isRetired;
+
+    /// @notice Will only be true on the original deployed contract and not on clones; we don't want to clone a clone.
+    bool public isOriginal = true;
+
+    /// @notice The address of our staking token.
+    IERC20 public stakingToken;
+
     /// @notice The address of our reward token => reward info.
     mapping(address => Reward) public rewardData;
 
     /// @notice Array containing the addresses of all of our reward tokens.
     address[] public rewardTokens;
 
-    /// @notice The address of our staking token.
-    IERC20 public stakingToken;
-
     /// @notice Zap contract can execute arbitrary logic before stake and after withdraw for our stakingToken.
     address public zapContract;
-
-    /**
-     * @notice Bool for if this staking contract is shut down and rewards have been swept out.
-     * @dev Can only be performed at least 90 days after final reward period ends.
-     */
-    bool public isRetired;
 
     /**
      * @notice The amount of rewards allocated to a user per whole token staked.
@@ -81,9 +83,6 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
 
-    /// @notice Will only be true on the original deployed contract and not on clones; we don't want to clone a clone.
-    bool public isOriginal = true;
-
     /// @notice Owner can add rewards tokens, update zap contract, etc.
     address public owner;
 
@@ -92,6 +91,9 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
 
     /// @notice Used to track the deployed version of this contract.
     string public constant stakerVersion = "1.0.0";
+
+    /// @notice Precision.
+    uint256 public constant PRECISION = 1e18;
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -201,7 +203,7 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         address _rewardsToken
     ) public view returns (uint256) {
         return
-            Math.min(block.timestamp, rewardData[_rewardsToken].periodFinish);
+            FixedPointMathLib.min(block.timestamp, rewardData[_rewardsToken].periodFinish);
     }
 
     /**
@@ -225,7 +227,7 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
             (((lastTimeRewardApplicable(_rewardsToken) -
                 rewardData[_rewardsToken].lastUpdateTime) *
                 rewardData[_rewardsToken].rewardRate *
-                1e18) / _totalSupply);
+                PRECISION) / _totalSupply);
     }
 
     /**
@@ -246,7 +248,7 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
             (_balances[_account] *
                 (rewardPerToken(_rewardsToken) -
                     userRewardPerTokenPaid[_account][_rewardsToken])) /
-            1e18 +
+            PRECISION +
             rewards[_account][_rewardsToken];
     }
 
@@ -277,8 +279,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         require(!isRetired, "Pool retired");
 
         // add amount to total supply and user balance
-        _totalSupply = _totalSupply + _amount;
-        _balances[msg.sender] = _balances[msg.sender] + _amount;
+        _totalSupply += _amount;
+        _balances[msg.sender] += _amount;
 
         // stake the amount, emit the event
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -299,8 +301,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         require(!isRetired, "Pool retired");
 
         // add amount to total supply and user balance
-        _totalSupply = _totalSupply + _amount;
-        _balances[_recipient] = _balances[_recipient] + _amount;
+        _totalSupply += _amount;
+        _balances[_recipient] += _amount;
 
         // stake the amount, emit the event
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -318,8 +320,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         require(_amount > 0, "Must be >0");
 
         // remove amount from total supply and user balance
-        _totalSupply = _totalSupply - _amount;
-        _balances[msg.sender] = _balances[msg.sender] - _amount;
+        _totalSupply -= _amount;
+        _balances[msg.sender] -= _amount;
 
         // send the requested amount, emit the event
         stakingToken.safeTransfer(msg.sender, _amount);
@@ -342,8 +344,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         require(_amount > 0, "Must be >0");
 
         // remove amount from total supply and user balance
-        _totalSupply = _totalSupply - _amount;
-        _balances[_recipient] = _balances[_recipient] - _amount;
+        _totalSupply -= _amount;
+        _balances[_recipient] -= _amount;
 
         // send the requested amount (to the zap contract!), emit the event
         stakingToken.safeTransfer(msg.sender, _amount);
@@ -413,10 +415,9 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         address _rewardsToken,
         uint256 _rewardAmount
     ) external updateReward(address(0)) {
-        require(
-            rewardData[_rewardsToken].rewardsDistributor == msg.sender,
-            "!authorized"
-        );
+
+        Reward memory _rewardData = rewardData[_rewardsToken];
+        require(_rewardData.rewardsDistributor == msg.sender, "!authorized");
         require(_rewardAmount > 0, "Must be >0");
 
         // handle the transfer of reward tokens via `transferFrom` to reduce the number
@@ -427,34 +428,26 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
             _rewardAmount
         );
 
-        if (block.timestamp >= rewardData[_rewardsToken].periodFinish) {
-            rewardData[_rewardsToken].rewardRate =
-                _rewardAmount /
-                rewardData[_rewardsToken].rewardsDuration;
+        if (block.timestamp >= _rewardData.periodFinish) {
+            rewardData[_rewardsToken].rewardRate = _rewardAmount / _rewardData.rewardsDuration;
         } else {
-            uint256 remaining = rewardData[_rewardsToken].periodFinish -
-                block.timestamp;
-            uint256 leftover = remaining * rewardData[_rewardsToken].rewardRate;
+            // uint256 remaining = _rewardData.periodFinish - block.timestamp;
+            // uint256 leftover = (_rewardData.periodFinish - block.timestamp) * _rewardData.rewardRate;
             rewardData[_rewardsToken].rewardRate =
-                (_rewardAmount + leftover) /
-                rewardData[_rewardsToken].rewardsDuration;
+                (_rewardAmount + (_rewardData.periodFinish - block.timestamp) * _rewardData.rewardRate) / _rewardData.rewardsDuration;
         }
 
         // Ensure the provided reward amount is not more than the balance in the contract.
         // This keeps the reward rate in the right range, preventing overflows due to
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
-        uint256 balance = IERC20(_rewardsToken).balanceOf(address(this));
         require(
-            rewardData[_rewardsToken].rewardRate <=
-                (balance / rewardData[_rewardsToken].rewardsDuration),
+            rewardData[_rewardsToken].rewardRate <= (IERC20(_rewardsToken).balanceOf(address(this)) / _rewardData.rewardsDuration),
             "Provided reward too high"
         );
 
         rewardData[_rewardsToken].lastUpdateTime = block.timestamp;
-        rewardData[_rewardsToken].periodFinish =
-            block.timestamp +
-            rewardData[_rewardsToken].rewardsDuration;
+        rewardData[_rewardsToken].periodFinish = block.timestamp + _rewardData.rewardsDuration;
         emit RewardAdded(_rewardsToken, _rewardAmount);
     }
 
@@ -470,12 +463,11 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         address _rewardsToken,
         address _rewardsDistributor,
         uint256 _rewardsDuration
-    ) external {
+    ) external onlyOwner {
         require(
             _rewardsToken != address(0) && _rewardsDistributor != address(0),
             "No zero address"
         );
-        require(msg.sender == owner, "!authorized");
         require(_rewardsDuration > 0, "Must be >0");
         require(
             rewardData[_rewardsToken].rewardsDuration == 0,
@@ -497,12 +489,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
     function setRewardsDistributor(
         address _rewardsToken,
         address _rewardsDistributor
-    ) external {
-        require(
-            _rewardsToken != address(0) && _rewardsDistributor != address(0),
-            "No zero address"
-        );
-        require(msg.sender == owner, "!authorized");
+    ) external onlyOwner {
+        require(_rewardsToken != address(0) && _rewardsDistributor != address(0), "No zero address");
         rewardData[_rewardsToken].rewardsDistributor = _rewardsDistributor;
     }
 
@@ -516,20 +504,14 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         address _rewardsToken,
         uint256 _rewardsDuration
     ) external {
-        require(
-            block.timestamp > rewardData[_rewardsToken].periodFinish,
-            "Rewards active"
-        );
-        require(
-            rewardData[_rewardsToken].rewardsDistributor == msg.sender,
-            "!authorized"
-        );
+        Reward memory _rewardData = rewardData[_rewardsToken];
+        require(block.timestamp > _rewardData.periodFinish, "Rewards active");
+        require(_rewardData.rewardsDistributor == msg.sender, "!authorized");
         require(_rewardsDuration > 0, "Must be >0");
+
         rewardData[_rewardsToken].rewardsDuration = _rewardsDuration;
-        emit RewardsDurationUpdated(
-            _rewardsToken,
-            rewardData[_rewardsToken].rewardsDuration
-        );
+
+        emit RewardsDurationUpdated(_rewardsToken, _rewardsDuration);
     }
 
     /**
@@ -537,9 +519,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
      * @dev May only be called by owner, and can't be set to zero address.
      * @param _zapContract Address of the new zap contract.
      */
-    function setZapContract(address _zapContract) external {
+    function setZapContract(address _zapContract) external onlyOwner {
         require(_zapContract != address(0), "No zero address");
-        require(msg.sender == owner, "!authorized");
         zapContract = _zapContract;
         emit ZapContractUpdated(_zapContract);
     }
@@ -549,8 +530,7 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
      *  @dev May only be called by current owner role.
      *  @param _owner Address of new owner.
      */
-    function setPendingOwner(address _owner) external {
-        require(msg.sender == owner, "!authorized");
+    function setPendingOwner(address _owner) external onlyOwner {
         pendingOwner = _owner;
     }
 
@@ -575,11 +555,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
     function recoverERC20(
         address _tokenAddress,
         uint256 _tokenAmount
-    ) external {
-        if (_tokenAddress == address(stakingToken)) {
-            revert("!staking token");
-        }
-        require(msg.sender == owner, "!authorized");
+    ) external onlyOwner {
+        if (_tokenAddress == address(stakingToken)) revert("!staking token");
 
         // can only recover reward tokens 90 days after last reward token ends
         bool isRewardToken;
@@ -628,6 +605,11 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
                     .rewardPerTokenStored;
             }
         }
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "!authorized");
         _;
     }
 

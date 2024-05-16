@@ -5,10 +5,6 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 import {IStakingRewards} from "./interfaces/IStakingRewards.sol";
 
-/**
- * @dev This would be equivalent to StakingRewardsRegistry.sol (https://etherscan.io/address/0x85d324Bc55D1143B6a0f6310CE18A07dCF779f53),
- *  except for downgrading the Solidity version from 0.8.19 to 0.8.18.
- */
 contract StakingRewardsRegistry is Ownable2Step {
     /* ========== STATE VARIABLES ========== */
 
@@ -110,8 +106,7 @@ contract StakingRewardsRegistry is Ownable2Step {
         IStakingRewards stakingRewards = IStakingRewards(_stakingPool);
 
         // check that gov is correct on the staking contract
-        address poolGov = stakingRewards.owner();
-        require(approvedPoolOwner[poolGov], "not allowed pool owner");
+        require(approvedPoolOwner[stakingRewards.owner()], "not allowed pool owner");
 
         // make sure we didn't mess up our token/staking pool match
         require(

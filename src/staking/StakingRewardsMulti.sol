@@ -433,17 +433,20 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         if (block.timestamp >= _rewardData.periodFinish) {
             rewardData[_rewardsToken].rewardRate = _rewardAmount / _rewardData.rewardsDuration;
         } else {
-            uint256 remaining = _rewardData.periodFinish - block.timestamp;
-            uint256 leftover = remaining * _rewardData.rewardRate;
-            rewardData[_rewardsToken].rewardRate = (_rewardAmount + leftover) / _rewardData.rewardsDuration;
+            // uint256 remaining = _rewardData.periodFinish - block.timestamp;
+            // uint256 leftover = (_rewardData.periodFinish - block.timestamp) * _rewardData.rewardRate;
+            rewardData[_rewardsToken].rewardRate =
+                (_rewardAmount + (_rewardData.periodFinish - block.timestamp) * _rewardData.rewardRate) / _rewardData.rewardsDuration;
         }
 
         // Ensure the provided reward amount is not more than the balance in the contract.
         // This keeps the reward rate in the right range, preventing overflows due to
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
-        uint256 balance = IERC20(_rewardsToken).balanceOf(address(this));
-        require(rewardData[_rewardsToken].rewardRate <= (balance / _rewardData.rewardsDuration), "Provided reward too high");
+        require(
+            rewardData[_rewardsToken].rewardRate <= (IERC20(_rewardsToken).balanceOf(address(this)) / _rewardData.rewardsDuration),
+            "Provided reward too high"
+        );
 
         rewardData[_rewardsToken].lastUpdateTime = block.timestamp;
         rewardData[_rewardsToken].periodFinish = block.timestamp + _rewardData.rewardsDuration;

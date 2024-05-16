@@ -60,7 +60,7 @@ contract StakingRewardsZap is Ownable {
 
         // get our underlying token
         IVault targetVault = IVault(_targetVault);
-        IERC20 underlying = IERC20(targetVault.asset());
+        IERC20 underlying = targetVault.asset();
 
         // transfer to zap and deposit underlying to vault, but first check our approvals
         _checkAllowance(_targetVault, address(underlying), _underlyingAmount);
@@ -107,7 +107,7 @@ contract StakingRewardsZap is Ownable {
 
         // get our underlying token
         IVault targetVault = IVault(_targetVault);
-        IERC20 underlying = IERC20(targetVault.token());
+        IERC20 underlying = targetVault.token();
 
         // transfer to zap and deposit underlying to vault, but first check our approvals
         _checkAllowance(_targetVault, address(underlying), _underlyingAmount);

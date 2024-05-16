@@ -5,10 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IVault is IERC20 {
     // v2 vault
-    function token() external view returns (address);
+    function token() external view returns (IERC20);
 
     // v3 vault and tokenized strategy (ERC-4626)
-    function asset() external view returns (address);
+    function asset() external view returns (IERC20);
 
     // v2 vault and v3/tokenized ERC-4626 (both the same)
     function deposit(

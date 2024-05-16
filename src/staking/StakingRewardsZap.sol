@@ -158,7 +158,7 @@ contract StakingRewardsZap is Ownable {
 
         // get our underlying token
         IVault targetVault = IVault(_vault);
-        IERC20 underlying = IERC20(targetVault.asset());
+        IERC20 underlying = targetVault.asset();
 
         // check our before amount in case there is any loose token stuck in the zap
         uint256 beforeAmount = underlying.balanceOf(address(this));
@@ -207,7 +207,7 @@ contract StakingRewardsZap is Ownable {
 
         // get our underlying token
         IVault targetVault = IVault(_vault);
-        IERC20 underlying = IERC20(targetVault.token());
+        IERC20 underlying = targetVault.token();
 
         // check our before amount in case there is any loose token stuck in the zap
         uint256 beforeAmount = underlying.balanceOf(address(this));

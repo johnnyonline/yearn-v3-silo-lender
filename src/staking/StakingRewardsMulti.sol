@@ -511,20 +511,14 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         address _rewardsToken,
         uint256 _rewardsDuration
     ) external {
-        require(
-            block.timestamp > rewardData[_rewardsToken].periodFinish,
-            "Rewards active"
-        );
-        require(
-            rewardData[_rewardsToken].rewardsDistributor == msg.sender,
-            "!authorized"
-        );
+        Reward memory _rewardData = rewardData[_rewardsToken];
+        require(block.timestamp > _rewardData.periodFinish, "Rewards active");
+        require(_rewardData.rewardsDistributor == msg.sender, "!authorized");
         require(_rewardsDuration > 0, "Must be >0");
+
         rewardData[_rewardsToken].rewardsDuration = _rewardsDuration;
-        emit RewardsDurationUpdated(
-            _rewardsToken,
-            rewardData[_rewardsToken].rewardsDuration
-        );
+
+        emit RewardsDurationUpdated(_rewardsToken, _rewardsDuration);
     }
 
     /**

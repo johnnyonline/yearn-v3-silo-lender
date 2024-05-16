@@ -322,8 +322,8 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         require(_amount > 0, "Must be >0");
 
         // remove amount from total supply and user balance
-        _totalSupply = _totalSupply - _amount;
-        _balances[msg.sender] = _balances[msg.sender] - _amount;
+        _totalSupply -= _amount;
+        _balances[msg.sender] -= _amount;
 
         // send the requested amount, emit the event
         stakingToken.safeTransfer(msg.sender, _amount);

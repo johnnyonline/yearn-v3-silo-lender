@@ -417,10 +417,9 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         address _rewardsToken,
         uint256 _rewardAmount
     ) external updateReward(address(0)) {
-        require(
-            rewardData[_rewardsToken].rewardsDistributor == msg.sender,
-            "!authorized"
-        );
+
+        Reward memory _rewardData = rewardData[_rewardsToken];
+        require(_rewardData.rewardsDistributor == msg.sender, "!authorized");
         require(_rewardAmount > 0, "Must be >0");
 
         // handle the transfer of reward tokens via `transferFrom` to reduce the number
@@ -431,17 +430,12 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
             _rewardAmount
         );
 
-        if (block.timestamp >= rewardData[_rewardsToken].periodFinish) {
-            rewardData[_rewardsToken].rewardRate =
-                _rewardAmount /
-                rewardData[_rewardsToken].rewardsDuration;
+        if (block.timestamp >= _rewardData.periodFinish) {
+            rewardData[_rewardsToken].rewardRate = _rewardAmount / _rewardData.rewardsDuration;
         } else {
-            uint256 remaining = rewardData[_rewardsToken].periodFinish -
-                block.timestamp;
-            uint256 leftover = remaining * rewardData[_rewardsToken].rewardRate;
-            rewardData[_rewardsToken].rewardRate =
-                (_rewardAmount + leftover) /
-                rewardData[_rewardsToken].rewardsDuration;
+            uint256 remaining = _rewardData.periodFinish - block.timestamp;
+            uint256 leftover = remaining * _rewardData.rewardRate;
+            rewardData[_rewardsToken].rewardRate = (_rewardAmount + leftover) / _rewardData.rewardsDuration;
         }
 
         // Ensure the provided reward amount is not more than the balance in the contract.
@@ -449,16 +443,10 @@ contract StakingRewardsMulti is ReentrancyGuard, Pausable {
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
         uint256 balance = IERC20(_rewardsToken).balanceOf(address(this));
-        require(
-            rewardData[_rewardsToken].rewardRate <=
-                (balance / rewardData[_rewardsToken].rewardsDuration),
-            "Provided reward too high"
-        );
+        require(rewardData[_rewardsToken].rewardRate <= (balance / _rewardData.rewardsDuration), "Provided reward too high");
 
         rewardData[_rewardsToken].lastUpdateTime = block.timestamp;
-        rewardData[_rewardsToken].periodFinish =
-            block.timestamp +
-            rewardData[_rewardsToken].rewardsDuration;
+        rewardData[_rewardsToken].periodFinish = block.timestamp + _rewardData.rewardsDuration;
         emit RewardAdded(_rewardsToken, _rewardAmount);
     }
 

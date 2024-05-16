@@ -172,7 +172,7 @@ contract StakingRewardsZap is Ownable {
         );
 
         // send underlying token to user
-        underlying.transfer(msg.sender, underlyingAmount);
+        underlying.safeTransfer(msg.sender, underlyingAmount);
 
         emit ZapOut(msg.sender, _vault, underlyingAmount);
     }
@@ -220,7 +220,7 @@ contract StakingRewardsZap is Ownable {
         );
 
         // send underlying token to user
-        underlying.transfer(msg.sender, underlyingAmount);
+        underlying.safeTransfer(msg.sender, underlyingAmount);
 
         emit ZapOut(msg.sender, _vault, underlyingAmount);
     }

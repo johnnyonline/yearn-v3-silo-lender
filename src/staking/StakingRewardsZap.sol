@@ -67,7 +67,7 @@ contract StakingRewardsZap is Ownable {
 
         // check our before amount in case there is any loose token stuck in the zap
         uint256 beforeAmount = underlying.balanceOf(address(this));
-        underlying.transferFrom(msg.sender, address(this), _underlyingAmount);
+        underlying.safeTransferFrom(msg.sender, address(this), _underlyingAmount);
 
         // deposit only our underlying amount, make sure deposit worked
         toStake = targetVault.deposit(_underlyingAmount, address(this));
@@ -114,7 +114,7 @@ contract StakingRewardsZap is Ownable {
 
         // check our before amount in case there is any loose token stuck in the zap
         uint256 beforeAmount = underlying.balanceOf(address(this));
-        underlying.transferFrom(msg.sender, address(this), _underlyingAmount);
+        underlying.safeTransferFrom(msg.sender, address(this), _underlyingAmount);
 
         // deposit only our underlying amount, make sure deposit worked
         toStake = targetVault.deposit(_underlyingAmount, address(this));

@@ -78,7 +78,7 @@ contract OperationTest is Setup {
         (uint256 profit, uint256 loss) = strategy.report();
 
         // Check return Values
-        assertGe(profit, toAirdrop, "!profit");
+        assertGe(profit, toAirdrop - 1, "!profit"); // dev: strategy rounds down
         assertEq(loss, 0, "!loss");
 
         skip(strategy.profitMaxUnlockTime());
@@ -123,7 +123,7 @@ contract OperationTest is Setup {
         (uint256 profit, uint256 loss) = strategy.report();
 
         // Check return Values
-        assertGe(profit, toAirdrop, "!profit");
+        assertGe(profit, toAirdrop - 1, "!profit"); // dev: strategy rounds down
         assertEq(loss, 0, "!loss");
 
         skip(strategy.profitMaxUnlockTime());

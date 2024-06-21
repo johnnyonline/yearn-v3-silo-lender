@@ -13,8 +13,8 @@ import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 import {SiloStrategyFactory, SiloStrategy} from "../../strategies/silo/SiloStrategyFactory.sol";
 
 contract Strategies is ExtendedTest {
-    address private constant _crvUSDCRVSilo =
-        0x96eFdF95Cc47fe90e8f63D2f5Ef9FB8B180dAeB9;
+    address private constant _crvUSDYFISilo =
+        0xb0823c25cDF531a58e581eE14f160c290fef5722;
     address private constant _siloRepository =
         0xBCd67f35c7A2F212db0AD7f68fC773b5aC15377c;
     address private constant _crvUSD =
@@ -45,7 +45,7 @@ contract Strategies is ExtendedTest {
             _incentivesController,
             "!incentivesController"
         );
-        assertEq(address(_strategy.silo()), _crvUSDCRVSilo, "!silo");
+        assertEq(address(_strategy.silo()), _crvUSDYFISilo, "!silo");
         assertEq(
             address(_strategy.share()),
             address(_strategy.silo().assetStorage(_crvUSD).collateralToken),
@@ -91,7 +91,7 @@ contract Strategies is ExtendedTest {
             _crv,
             _yfi,
             _incentivesController,
-            "crvUSD/CRV SiloLlamaStrategy"
+            "crvUSD/YFI SiloLlamaStrategy"
         );
 
         vm.expectRevert("wrong silo");
@@ -100,20 +100,20 @@ contract Strategies is ExtendedTest {
             _yfi,
             _crv,
             _incentivesController,
-            "crvUSD/CRV SiloLlamaStrategy"
+            "crvUSD/YFI SiloLlamaStrategy"
         );
 
         _strategy = address(factory.deploySiloStrategy(
             management,
-            _crv,
+            _yfi,
             _crvUSD,
             _incentivesController,
-            "crvUSD/CRV SiloLlamaStrategy"
+            "crvUSD/YFI SiloLlamaStrategy"
         ));
     }
 
     function _earnSiloInterest() private {
-        ISilo(_crvUSDCRVSilo).accrueInterest(_crvUSD);
+        ISilo(_crvUSDYFISilo).accrueInterest(_crvUSD);
     }
 
     function _testSiloNoLiquidity(address strategy_) private {
@@ -121,21 +121,21 @@ contract Strategies is ExtendedTest {
         ISilo _silo = _strategy.silo();
 
         uint256 _amount = 1_000_000_000 * 1e18;
-        deal(_crv, _borrower, _amount);
+        deal(_yfi, _borrower, _amount);
 
         vm.startPrank(_borrower);
 
-        ERC20(_crv).approve(address(_silo), _amount);
+        ERC20(_yfi).approve(address(_silo), _amount);
 
         _silo.deposit(
-            _crv,
+            _yfi,
             _amount,
             true // _collateralOnly
         );
 
         _silo.borrow(
             _crvUSD,
-            ISilo(_crvUSDCRVSilo).liquidity(_crvUSD) // borrow all
+            ISilo(_crvUSDYFISilo).liquidity(_crvUSD) // borrow all
         );
 
         assertEq(_strategy.availableWithdrawLimit(address(0)), 0, "!availableWithdrawLimit");

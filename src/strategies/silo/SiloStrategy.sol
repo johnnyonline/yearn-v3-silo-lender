@@ -6,6 +6,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthCheck.sol";
 import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
+import {Governance2Step} from "@periphery/utils/Governance2Step.sol";
 
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {IGuardedLaunch} from "@silo/interfaces/IGuardedLaunch.sol";
@@ -32,7 +33,7 @@ import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
  * @author johnnyonline
  * @notice A strategy that deposits funds into a Silo and harvests incentives.
  */
-contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
+contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
     using SafeERC20 for ERC20;
     using EasyMathV2 for uint256;
 
@@ -63,6 +64,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
 
     /**
      * @notice Used to initialize the strategy on deployment.
+     * @param _governance Address of the governance contract.
      * @param _repository Address of the Silo repository.
      * @param _silo Address of the Silo that the strategy is using.
      * @param _share Address of the share token that represents the strategy's share of the Silo.
@@ -71,13 +73,14 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param _name Name the strategy will use.
      */
     constructor(
+        address _governance,
         address _repository,
         address _silo,
         address _share,
         address _asset,
         address _incentivesController,
         string memory _name
-    ) BaseHealthCheck(_asset, _name) {
+    ) BaseHealthCheck(_asset, _name) Governance2Step(_governance) {
         repository = ISiloRepository(_repository);
         silo = ISilo(_silo);
         share = IShareToken(_share);
@@ -87,13 +90,17 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        MANAGEMENT FUNCTIONS
+                        GOVERNANCE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function setIncentivesController(address _incentivesController) external onlyManagement {
+    function setIncentivesController(address _incentivesController) external onlyGovernance {
         require(_incentivesController != address(0), "!incentivesController");
         incentivesController = IAaveIncentivesController(_incentivesController);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                        MANAGEMENT FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
     function setTradeFactory(address _tradeFactory) external onlyManagement {
         _setTradeFactory(_tradeFactory, address(asset));

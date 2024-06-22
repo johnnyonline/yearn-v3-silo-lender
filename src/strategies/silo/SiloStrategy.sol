@@ -107,10 +107,11 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
     }
 
     function addTokens(
-        address[] memory _from,
-        address[] memory _to
+        address _from,
+        address _to
     ) external onlyManagement {
-        _addTokens(_from, _to);
+        require(_from != address(asset), "!asset");
+        _addToken(_from, _to);
     }
 
     /*//////////////////////////////////////////////////////////////

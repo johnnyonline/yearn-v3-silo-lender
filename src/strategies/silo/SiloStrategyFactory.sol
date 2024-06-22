@@ -28,6 +28,16 @@ contract SiloStrategyFactory {
     );
 
     /**
+     * @notice Emitted when the management address is set.
+     */
+    event ManagementSet(address management);
+
+    /**
+     * @notice Emitted when the performance fee recipient address is set.
+     */
+    event PerformanceFeeRecipientSet(address performanceFeeRecipient);
+
+    /**
      * @dev The management address.
      */
     address public management;
@@ -51,6 +61,7 @@ contract SiloStrategyFactory {
     constructor(ISiloRepository _repository, address _management, address _performanceFeeRecipient) {
         require(Ping.pong(_repository.siloRepositoryPing), "invalid silo repository");
         require(_management != address(0), "invalid management");
+        require(_performanceFeeRecipient != address(0), "invalid performance fee recipient");
 
         repository = _repository;
         management = _management;
@@ -117,6 +128,7 @@ contract SiloStrategyFactory {
     function setManagement(address _management) external onlyManagement {
         require(_management != address(0), "ZERO_ADDRESS");
         management = _management;
+        emit ManagementSet(_management);
     }
 
     /**
@@ -129,5 +141,6 @@ contract SiloStrategyFactory {
     ) external onlyManagement {
         require(_performanceFeeRecipient != address(0), "ZERO_ADDRESS");
         performanceFeeRecipient = _performanceFeeRecipient;
+        emit PerformanceFeeRecipientSet(_performanceFeeRecipient);
     }
 }

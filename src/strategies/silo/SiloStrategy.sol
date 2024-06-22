@@ -142,6 +142,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param _amount, The amount of 'asset' to be freed.
      */
     function _freeFunds(uint256 _amount) internal override {
+        silo.accrueInterest(address(asset));
         silo.withdraw(address(asset), _amount, false);
     }
 
@@ -172,6 +173,8 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         override
         returns (uint256 _totalAssets)
     {
+        silo.accrueInterest(address(asset));
+
         // Only harvest and redeploy if the strategy is not shutdown.
         if (!TokenizedStrategy.isShutdown()) {
             uint256 _toDeploy = asset.balanceOf(address(this));
@@ -333,6 +336,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      *
      */
     function _emergencyWithdraw(uint256 _amount) internal override {
+        silo.accrueInterest(address(asset));
         _freeFunds(
             Math.min(
                 _amount,

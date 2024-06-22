@@ -86,6 +86,7 @@ contract SiloStrategyFactory {
 
         _strategy = IStrategyInterface(address(
             new SiloStrategy(
+                address(repository),
                 _silo,
                 _share,
                 _strategyAsset,

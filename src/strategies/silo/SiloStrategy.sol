@@ -8,6 +8,8 @@ import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthChe
 import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
 
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
+import {IGuardedLaunch} from "@silo/interfaces/IGuardedLaunch.sol";
+import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 import {IShareToken} from "@silo/interfaces/IShareToken.sol";
 import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
@@ -35,9 +37,19 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     using EasyMathV2 for uint256;
 
     /**
+     * @dev The precision used in `repository.priceProvidersRepository().getPrice()`.
+     */
+    uint256 private constant PRECISION = 1e18;
+
+    /**
      * @dev The incentives controller that pays the reward token.
      */
     IAaveIncentivesController public immutable incentivesController;
+
+    /**
+     * @dev The Silo repository contract.
+     */
+    ISiloRepository public immutable repository;
 
     /**
      * @dev The Silo that the strategy is using.
@@ -51,6 +63,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
 
     /**
      * @notice Used to initialize the strategy on deployment.
+     * @param _repository Address of the Silo repository.
      * @param _silo Address of the Silo that the strategy is using.
      * @param _share Address of the share token that represents the strategy's share of the Silo.
      * @param _asset Address of the underlying asset.
@@ -58,12 +71,14 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param _name Name the strategy will use.
      */
     constructor(
+        address _repository,
         address _silo,
         address _share,
         address _asset,
         address _incentivesController,
         string memory _name
     ) BaseHealthCheck(_asset, _name) {
+        repository = ISiloRepository(_repository);
         silo = ISilo(_silo);
         share = IShareToken(_share);
         incentivesController = IAaveIncentivesController(_incentivesController);
@@ -159,13 +174,13 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     {
         // Only harvest and redeploy if the strategy is not shutdown.
         if (!TokenizedStrategy.isShutdown()) {
-
-            // Check how much we can re-deploy into the yield source.
-            uint256 toDeploy = asset.balanceOf(address(this));
-            // If greater than 0.
-            if (toDeploy > 0) {
-                // Deposit the sold amount back into the yield source.
-                _deployFunds(toDeploy);
+            uint256 _toDeploy = asset.balanceOf(address(this));
+            if (_toDeploy > 0) {
+                if (_toDeploy <= availableDepositLimit(address(0))) {
+                    _deployFunds(_toDeploy);
+                } else {
+                    silo.accrueInterest(address(asset));
+                }
             }
         }
 
@@ -243,17 +258,32 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param . The address that is depositing into the strategy.
      * @return . The available amount the `_owner` can deposit in terms of `asset`
      *
-     
-    function availableDepositLimit(
-        address _owner
-    ) public view override returns (uint256) {
-        TODO: If desired Implement deposit limit logic and any needed state variables .
-
-        EX:
-            uint256 totalAssets = TokenizedStrategy.totalAssets();
-            return totalAssets >= depositLimit ? 0 : depositLimit - totalAssets;
-    }
     */
+    function availableDepositLimit(
+        address // _owner
+    ) public view override returns (uint256) {
+        if (silo.depositPossible(address(asset), address(this))) {
+            ISilo.AssetStorage memory _assetState = silo.assetStorage(address(asset));
+
+            uint256 _price = repository.priceProvidersRepository().getPrice(address(asset));
+            uint256 _totalDepositsValue =
+                _price *
+                (_assetState.totalDeposits + _assetState.collateralOnlyDeposits) /
+                (10 ** ERC20(address(asset)).decimals());
+
+            uint256 _maxDepositsValue = IGuardedLaunch(address(repository)).getMaxSiloDepositsValue(address(silo), address(asset));
+            if (_maxDepositsValue == type(uint256).max) return type(uint256).max;
+
+            if (_maxDepositsValue > _totalDepositsValue) {
+                uint256 _availableDepositValue = _maxDepositsValue - _totalDepositsValue;
+                return _availableDepositValue * PRECISION / _price;
+            } else {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
+    }
 
     /**
      * @notice Gets the max amount of `asset` that can be withdrawn.

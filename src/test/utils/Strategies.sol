@@ -3,14 +3,17 @@ pragma solidity 0.8.18;
 
 import {ExtendedTest} from "./ExtendedTest.sol";
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
+import {GuardedLaunch} from "@silo/utils/GuardedLaunch.sol";
 
 import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 
 import {SiloStrategyFactory, SiloStrategy} from "../../strategies/silo/SiloStrategyFactory.sol";
+
+import "forge-std/console.sol";
 
 contract Strategies is ExtendedTest {
     address private constant _crvUSDYFISilo =
@@ -64,7 +67,8 @@ contract Strategies is ExtendedTest {
     }
 
     function _customStrategyTest(address strategy_) internal {
-        _testSiloNoLiquidity(strategy_);
+        _testWithdrawLimit(strategy_);
+        _testDepositLimit(strategy_);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -116,7 +120,32 @@ contract Strategies is ExtendedTest {
         ISilo(_crvUSDYFISilo).accrueInterest(_crvUSD);
     }
 
-    function _testSiloNoLiquidity(address strategy_) private {
+    function _testDepositLimit(address strategy_) private {
+        GuardedLaunch _repo = GuardedLaunch(_siloRepository);
+        assertEq(_repo.getMaxSiloDepositsValue(_crvUSDYFISilo, _crvUSD), type(uint256).max, "_testDepositLimit: E0");
+
+        vm.startPrank(_repo.manager());
+        _repo.setLimitedMaxLiquidity(true);
+
+        ISilo.AssetStorage memory _assetState = ISilo(_crvUSDYFISilo).assetStorage(_crvUSD);
+        uint256 _totalDeposit = _assetState.totalDeposits + _assetState.collateralOnlyDeposits;
+
+        uint256 _price = ISiloRepository(_siloRepository).priceProvidersRepository().getPrice(_crvUSD);
+        uint256 _totalDepositsValue = _price * _totalDeposit / (10 ** IERC20Metadata(_crvUSD).decimals());
+
+        _repo.setSiloMaxDepositsLimit(_crvUSDYFISilo, _crvUSD, _totalDepositsValue);
+        assertEq(_repo.getMaxSiloDepositsValue(_crvUSDYFISilo, _crvUSD), _totalDepositsValue, "_testDepositLimit: E1");
+        assertEq(IStrategyInterface(strategy_).availableDepositLimit(address(0)), 0, "_testDepositLimit: E2");
+
+        _repo.setSiloMaxDepositsLimit(_crvUSDYFISilo, _crvUSD, _totalDepositsValue * 2);
+        assertEq(_repo.getMaxSiloDepositsValue(_crvUSDYFISilo, _crvUSD), _totalDepositsValue * 2, "_testDepositLimit: E3");
+        assertApproxEqAbs(IStrategyInterface(strategy_).availableDepositLimit(address(0)), _totalDeposit, 1e4, "_testDepositLimit: E4");
+        assertGe(_totalDeposit, IStrategyInterface(strategy_).availableDepositLimit(address(0)), "_testDepositLimit: E5");
+
+        vm.stopPrank();
+    }
+
+    function _testWithdrawLimit(address strategy_) private {
         SiloStrategy _strategy = SiloStrategy(strategy_);
         ISilo _silo = _strategy.silo();
 
@@ -137,6 +166,8 @@ contract Strategies is ExtendedTest {
             _crvUSD,
             ISilo(_crvUSDYFISilo).liquidity(_crvUSD) // borrow all
         );
+
+        vm.stopPrank();
 
         assertEq(_strategy.availableWithdrawLimit(address(0)), 0, "!availableWithdrawLimit");
     }

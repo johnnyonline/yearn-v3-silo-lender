@@ -37,14 +37,9 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     using EasyMathV2 for uint256;
 
     /**
-     * @dev The precision used in `repository.priceProvidersRepository().getPrice()`.
-     */
-    uint256 private constant PRECISION = 1e18;
-
-    /**
      * @dev The incentives controller that pays the reward token.
      */
-    IAaveIncentivesController public immutable incentivesController;
+    IAaveIncentivesController public incentivesController;
 
     /**
      * @dev The Silo repository contract.
@@ -60,6 +55,11 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @dev The share token that represents the strategy's share of the Silo.
      */
     IShareToken public immutable share;
+
+    /**
+     * @dev The precision used in `repository.priceProvidersRepository().getPrice()`.
+     */
+    uint256 private constant _PRECISION = 1e18;
 
     /**
      * @notice Used to initialize the strategy on deployment.
@@ -89,6 +89,11 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     /*//////////////////////////////////////////////////////////////
                         MANAGEMENT FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    function setIncentivesController(address _incentivesController) external onlyManagement {
+        require(_incentivesController != address(0), "!incentivesController");
+        incentivesController = IAaveIncentivesController(_incentivesController);
+    }
 
     function setTradeFactory(address _tradeFactory) external onlyManagement {
         _setTradeFactory(_tradeFactory, address(asset));
@@ -192,10 +197,11 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     }
 
     function _claimRewards() internal override {
-        if (address(incentivesController) != address(0)) {
+        IAaveIncentivesController _incentivesController = incentivesController;
+        if (address(_incentivesController) != address(0)) {
             address[] memory assets = new address[](1);
             assets[0] = address(share);
-            incentivesController.claimRewards(
+            _incentivesController.claimRewards(
                 assets,
                 type(uint256).max,
                 address(this)
@@ -279,7 +285,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
 
             if (_maxDepositsValue > _totalDepositsValue) {
                 uint256 _availableDepositValue = _maxDepositsValue - _totalDepositsValue;
-                return _availableDepositValue * PRECISION / _price;
+                return _availableDepositValue * _PRECISION / _price;
             } else {
                 return 0;
             }

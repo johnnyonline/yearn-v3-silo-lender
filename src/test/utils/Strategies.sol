@@ -16,18 +16,40 @@ import {SiloStrategyFactory, SiloStrategy} from "../../strategies/silo/SiloStrat
 import "forge-std/console.sol";
 
 contract Strategies is ExtendedTest {
-    address private constant _crvUSDYFISilo =
-        0xb0823c25cDF531a58e581eE14f160c290fef5722;
-    address private constant _siloRepository =
-        0xBCd67f35c7A2F212db0AD7f68fC773b5aC15377c;
-    address private constant _crvUSD =
-        0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E;
-    address private constant _incentivesController =
-        0x361384A0d755f972E5Eea26e4F4efBAf976B6461;
-    address private constant _crv = 0xD533a949740bb3306d119CC777fa900bA034cd52;
+
+    // LlamaEdition
+    address private constant _crvUSDYFISilo = 0xb0823c25cDF531a58e581eE14f160c290fef5722;
+    address private constant _siloRepositoryLlama = 0xBCd67f35c7A2F212db0AD7f68fC773b5aC15377c;
+    address private constant _crvUSD = 0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E;
+    address private constant _incentivesControllerLlama = 0x361384A0d755f972E5Eea26e4F4efBAf976B6461;
+    address private constant _crvEth = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address private constant _yfi = 0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e;
 
+    // Arbitrum
+    address private constant _usdcweETHSilo = 0x7bec832FF8060cD396645Ccd51E9E9B0E5d8c6e4;
+    address private constant _siloRepositoryARB = 0x8658047e48CC09161f4152c79155Dac1d710Ff0a;
+    address private constant _usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // 6 decimals
+    address private constant _incentivesControllerARB = 0x4999873bF8741bfFFB0ec242AAaA7EF1FE74FCE8; // SILO rewards
+    address private constant _weETH = 0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe;
+    address private constant _crvArb = 0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978;
+
+    // ----
+
     address private _borrower = address(420);
+
+    address private constant silo = _crvUSDYFISilo;
+    address private constant borrowedAsset = _crvUSD;
+    address private constant collateralAsset = _yfi;
+    address private constant incentivesController = _incentivesControllerLlama;
+    address private constant siloRepository = _siloRepositoryLlama;
+    address private constant _crv = _crvEth;
+
+    // address private constant silo = _usdcweETHSilo;
+    // address private constant borrowedAsset = _usdc;
+    // address private constant collateralAsset = _weETH;
+    // address private constant incentivesController = _incentivesControllerARB;
+    // address private constant siloRepository = _siloRepositoryARB;
+    // address private constant _crv = _crvArb;
 
     /*//////////////////////////////////////////////////////////////
                         GENERAL STRATEGY HELPERS
@@ -45,13 +67,13 @@ contract Strategies is ExtendedTest {
         SiloStrategy _strategy = SiloStrategy(strategy_);
         assertEq(
             address(_strategy.incentivesController()),
-            _incentivesController,
+            incentivesController,
             "!incentivesController"
         );
-        assertEq(address(_strategy.silo()), _crvUSDYFISilo, "!silo");
+        assertEq(address(_strategy.silo()), silo, "!silo");
         assertEq(
             address(_strategy.share()),
-            address(_strategy.silo().assetStorage(_crvUSD).collateralToken),
+            address(_strategy.silo().assetStorage(borrowedAsset).collateralToken),
             "!share"
         );
         assertEq(
@@ -85,7 +107,7 @@ contract Strategies is ExtendedTest {
         );
 
         SiloStrategyFactory factory = new SiloStrategyFactory(
-            ISiloRepository(_siloRepository),
+            ISiloRepository(siloRepository),
             management,
             governance,
             performanceFeeRecipient
@@ -95,52 +117,53 @@ contract Strategies is ExtendedTest {
         factory.deploySiloStrategy(
             management,
             _crv,
-            _yfi,
-            _incentivesController,
+            collateralAsset,
+            incentivesController,
             "crvUSD/YFI SiloLlamaStrategy"
         );
 
         vm.expectRevert("wrong silo");
         factory.deploySiloStrategy(
             management,
-            _yfi,
+            collateralAsset,
             _crv,
-            _incentivesController,
+            incentivesController,
             "crvUSD/YFI SiloLlamaStrategy"
         );
 
         _strategy = address(factory.deploySiloStrategy(
             management,
-            _yfi,
-            _crvUSD,
-            _incentivesController,
+            collateralAsset,
+            borrowedAsset,
+            incentivesController,
             "crvUSD/YFI SiloLlamaStrategy"
         ));
     }
 
     function _earnSiloInterest() private {
-        ISilo(_crvUSDYFISilo).accrueInterest(_crvUSD);
+        uint256 _accruedInterest = ISilo(silo).accrueInterest(borrowedAsset);
+        // require(_accruedInterest > 0, "no interest accrued"); // dev: could not earn interest for some reason
     }
 
     function _testDepositLimit(address strategy_) private {
-        GuardedLaunch _repo = GuardedLaunch(_siloRepository);
-        assertEq(_repo.getMaxSiloDepositsValue(_crvUSDYFISilo, _crvUSD), type(uint256).max, "_testDepositLimit: E0");
+        GuardedLaunch _repo = GuardedLaunch(siloRepository);
+        assertEq(_repo.getMaxSiloDepositsValue(silo, borrowedAsset), type(uint256).max, "_testDepositLimit: E0");
 
         vm.startPrank(_repo.manager());
         _repo.setLimitedMaxLiquidity(true);
 
-        ISilo.AssetStorage memory _assetState = ISilo(_crvUSDYFISilo).assetStorage(_crvUSD);
+        ISilo.AssetStorage memory _assetState = ISilo(silo).assetStorage(borrowedAsset);
         uint256 _totalDeposit = _assetState.totalDeposits + _assetState.collateralOnlyDeposits;
 
-        uint256 _price = ISiloRepository(_siloRepository).priceProvidersRepository().getPrice(_crvUSD);
-        uint256 _totalDepositsValue = _price * _totalDeposit / (10 ** IERC20Metadata(_crvUSD).decimals());
+        uint256 _price = ISiloRepository(siloRepository).priceProvidersRepository().getPrice(borrowedAsset);
+        uint256 _totalDepositsValue = _price * _totalDeposit / (10 ** IERC20Metadata(borrowedAsset).decimals());
 
-        _repo.setSiloMaxDepositsLimit(_crvUSDYFISilo, _crvUSD, _totalDepositsValue);
-        assertEq(_repo.getMaxSiloDepositsValue(_crvUSDYFISilo, _crvUSD), _totalDepositsValue, "_testDepositLimit: E1");
+        _repo.setSiloMaxDepositsLimit(silo, borrowedAsset, _totalDepositsValue);
+        assertEq(_repo.getMaxSiloDepositsValue(silo, borrowedAsset), _totalDepositsValue, "_testDepositLimit: E1");
         assertEq(IStrategyInterface(strategy_).availableDepositLimit(address(0)), 0, "_testDepositLimit: E2");
 
-        _repo.setSiloMaxDepositsLimit(_crvUSDYFISilo, _crvUSD, _totalDepositsValue * 2);
-        assertEq(_repo.getMaxSiloDepositsValue(_crvUSDYFISilo, _crvUSD), _totalDepositsValue * 2, "_testDepositLimit: E3");
+        _repo.setSiloMaxDepositsLimit(silo, borrowedAsset, _totalDepositsValue * 2);
+        assertEq(_repo.getMaxSiloDepositsValue(silo, borrowedAsset), _totalDepositsValue * 2, "_testDepositLimit: E3");
         assertApproxEqAbs(IStrategyInterface(strategy_).availableDepositLimit(address(0)), _totalDeposit, 1e4, "_testDepositLimit: E4");
         assertGe(_totalDeposit, IStrategyInterface(strategy_).availableDepositLimit(address(0)), "_testDepositLimit: E5");
 
@@ -152,21 +175,21 @@ contract Strategies is ExtendedTest {
         ISilo _silo = _strategy.silo();
 
         uint256 _amount = 1_000_000_000 * 1e18;
-        deal(_yfi, _borrower, _amount);
+        deal(collateralAsset, _borrower, _amount);
 
         vm.startPrank(_borrower);
 
-        ERC20(_yfi).approve(address(_silo), _amount);
+        ERC20(collateralAsset).approve(address(_silo), _amount);
 
         _silo.deposit(
-            _yfi,
+            collateralAsset,
             _amount,
             true // _collateralOnly
         );
 
         _silo.borrow(
-            _crvUSD,
-            ISilo(_crvUSDYFISilo).liquidity(_crvUSD) // borrow all
+            borrowedAsset,
+            ISilo(silo).liquidity(borrowedAsset) // borrow all
         );
 
         vm.stopPrank();

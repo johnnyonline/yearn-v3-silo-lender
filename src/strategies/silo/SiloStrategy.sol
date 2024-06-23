@@ -58,11 +58,6 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
     IShareToken public immutable share;
 
     /**
-     * @dev The precision used in `repository.priceProvidersRepository().getPrice()`.
-     */
-    uint256 private constant _PRECISION = 1e18;
-
-    /**
      * @notice Used to initialize the strategy on deployment.
      * @param _governance Address of the governance contract.
      * @param _repository Address of the Silo repository.
@@ -283,18 +278,17 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
         if (silo.depositPossible(address(asset), address(this))) {
             ISilo.AssetStorage memory _assetState = silo.assetStorage(address(asset));
 
+            uint256 _decimals = 10 ** ERC20(address(asset)).decimals();
             uint256 _price = repository.priceProvidersRepository().getPrice(address(asset));
-            uint256 _totalDepositsValue =
-                _price *
-                (_assetState.totalDeposits + _assetState.collateralOnlyDeposits) /
-                (10 ** ERC20(address(asset)).decimals());
+            uint256 _totalDepositsValue = _price * (_assetState.totalDeposits + _assetState.collateralOnlyDeposits) / _decimals;
 
             uint256 _maxDepositsValue = IGuardedLaunch(address(repository)).getMaxSiloDepositsValue(address(silo), address(asset));
             if (_maxDepositsValue == type(uint256).max) return type(uint256).max;
 
             if (_maxDepositsValue > _totalDepositsValue) {
                 uint256 _availableDepositValue = _maxDepositsValue - _totalDepositsValue;
-                return _availableDepositValue * _PRECISION / _price;
+                if (_availableDepositValue == 0) return 0;
+                return (_availableDepositValue * _decimals / _price) - 1;
             } else {
                 return 0;
             }

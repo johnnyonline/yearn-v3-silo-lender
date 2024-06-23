@@ -192,10 +192,11 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
         if (!TokenizedStrategy.isShutdown()) {
             uint256 _toDeploy = asset.balanceOf(address(this));
             if (_toDeploy > 0) {
-                if (_toDeploy <= availableDepositLimit(address(0))) {
+                uint256 _availableDepositLimit = availableDepositLimit(address(0));
+                if (_toDeploy <= _availableDepositLimit) {
                     _deployFunds(_toDeploy);
-                } else {
-                    silo.accrueInterest(address(asset));
+                } else if (_availableDepositLimit > 0) {
+                    _deployFunds(_availableDepositLimit);
                 }
             }
         }

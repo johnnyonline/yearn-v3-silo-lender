@@ -196,7 +196,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
             if (_toDeploy > DUST_THRESHOLD && _availableDepositLimit > DUST_THRESHOLD) {
                 if (_toDeploy <= _availableDepositLimit) {
                     _deployFunds(_toDeploy);
-                } else if (_availableDepositLimit > 0) {
+                } else {
                     _deployFunds(_availableDepositLimit);
                 }
             }

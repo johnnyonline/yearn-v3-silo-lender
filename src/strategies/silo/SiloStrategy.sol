@@ -192,8 +192,8 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         // Only harvest and redeploy if the strategy is not shutdown.
         if (!TokenizedStrategy.isShutdown()) {
             uint256 _toDeploy = asset.balanceOf(address(this));
-            if (_toDeploy > DUST_THRESHOLD) {
-                uint256 _availableDepositLimit = availableDepositLimit(address(0));
+            uint256 _availableDepositLimit = availableDepositLimit(address(0));
+            if (_toDeploy > DUST_THRESHOLD && _availableDepositLimit > DUST_THRESHOLD) {
                 if (_toDeploy <= _availableDepositLimit) {
                     _deployFunds(_toDeploy);
                 } else if (_availableDepositLimit > 0) {

@@ -293,9 +293,9 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
             if (_maxDepositsValue == type(uint256).max) return type(uint256).max;
 
             if (_maxDepositsValue > _totalDepositsValue) {
-                uint256 _availableDepositValue = _maxDepositsValue - _totalDepositsValue;
-                if (_availableDepositValue == 0) return 0;
-                return (_availableDepositValue * _decimals / _price) - 1;
+                uint256 _availableDeposit = (_maxDepositsValue - _totalDepositsValue) * _decimals / _price;
+                if (_availableDeposit == 0) return 0;
+                return _availableDeposit - 1;
             } else {
                 return 0;
             }

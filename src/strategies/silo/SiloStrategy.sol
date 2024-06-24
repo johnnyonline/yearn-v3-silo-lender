@@ -6,7 +6,6 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthCheck.sol";
 import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
-import {Governance2Step} from "@periphery/utils/Governance2Step.sol";
 
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {IGuardedLaunch} from "@silo/interfaces/IGuardedLaunch.sol";
@@ -33,7 +32,8 @@ import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
  * @author johnnyonline
  * @notice A strategy that deposits funds into a Silo and harvests incentives.
  */
-contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
+contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
+
     using SafeERC20 for ERC20;
     using EasyMathV2 for uint256;
 
@@ -58,8 +58,12 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
     IShareToken public immutable share;
 
     /**
+     * @dev The dust threshold for the strategy. Any amount below this will not be deposited.
+     */
+    uint256 private constant DUST_THRESHOLD = 10_000;
+
+    /**
      * @notice Used to initialize the strategy on deployment.
-     * @param _governance Address of the governance contract.
      * @param _repository Address of the Silo repository.
      * @param _silo Address of the Silo that the strategy is using.
      * @param _share Address of the share token that represents the strategy's share of the Silo.
@@ -68,14 +72,13 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
      * @param _name Name the strategy will use.
      */
     constructor(
-        address _governance,
         address _repository,
         address _silo,
         address _share,
         address _asset,
         address _incentivesController,
         string memory _name
-    ) BaseHealthCheck(_asset, _name) Governance2Step(_governance) {
+    ) BaseHealthCheck(_asset, _name) {
         repository = ISiloRepository(_repository);
         silo = ISilo(_silo);
         share = IShareToken(_share);
@@ -85,20 +88,16 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        GOVERNANCE FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    function setIncentivesController(address _incentivesController) external onlyGovernance {
-        require(_incentivesController != address(0), "!incentivesController");
-        incentivesController = IAaveIncentivesController(_incentivesController);
-    }
-
-    /*//////////////////////////////////////////////////////////////
                         MANAGEMENT FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
     function setTradeFactory(address _tradeFactory) external onlyManagement {
         _setTradeFactory(_tradeFactory, address(asset));
+    }
+
+    function setIncentivesController(address _incentivesController) external onlyManagement {
+        require(_incentivesController != address(0), "!incentivesController");
+        incentivesController = IAaveIncentivesController(_incentivesController);
     }
 
     function addToken(
@@ -193,7 +192,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper, Governance2Step {
         // Only harvest and redeploy if the strategy is not shutdown.
         if (!TokenizedStrategy.isShutdown()) {
             uint256 _toDeploy = asset.balanceOf(address(this));
-            if (_toDeploy > 0) {
+            if (_toDeploy > DUST_THRESHOLD) {
                 uint256 _availableDepositLimit = availableDepositLimit(address(0));
                 if (_toDeploy <= _availableDepositLimit) {
                     _deployFunds(_toDeploy);

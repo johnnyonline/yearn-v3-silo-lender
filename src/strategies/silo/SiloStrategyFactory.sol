@@ -33,11 +33,6 @@ contract SiloStrategyFactory {
     event ManagementSet(address management);
 
     /**
-     * @notice Emitted when the governance address is set.
-     */
-    event GovernanceSet(address governance);
-
-    /**
      * @notice Emitted when the performance fee recipient address is set.
      */
     event PerformanceFeeRecipientSet(address performanceFeeRecipient);
@@ -46,11 +41,6 @@ contract SiloStrategyFactory {
      * @dev The management address.
      */
     address public management;
-
-    /**
-     * @dev The governance address.
-     */
-    address public governance;
 
     /**
      * @dev The performance fee recipient.
@@ -66,18 +56,15 @@ contract SiloStrategyFactory {
      * @notice Used to initialize the strategy factory on deployment.
      * @param _repository Address of the Silo repository.
      * @param _management Address of the management account.
-     * @param _governance Address of the governance account.
      * @param _performanceFeeRecipient Address of the performance fee recipient.
      */
-    constructor(ISiloRepository _repository, address _management, address _governance, address _performanceFeeRecipient) {
+    constructor(ISiloRepository _repository, address _management, address _performanceFeeRecipient) {
         require(Ping.pong(_repository.siloRepositoryPing), "invalid silo repository");
         require(_management != address(0), "invalid management");
-        require(_governance != address(0), "invalid governance");
         require(_performanceFeeRecipient != address(0), "invalid performance fee recipient");
 
         repository = _repository;
         management = _management;
-        governance = _governance;
         performanceFeeRecipient = _performanceFeeRecipient;
     }
 
@@ -110,7 +97,6 @@ contract SiloStrategyFactory {
 
         _strategy = IStrategyInterface(address(
             new SiloStrategy(
-                governance,
                 address(repository),
                 _silo,
                 _share,
@@ -143,17 +129,6 @@ contract SiloStrategyFactory {
         require(_management != address(0), "ZERO_ADDRESS");
         management = _management;
         emit ManagementSet(_management);
-    }
-
-    /**
-     * @notice Set the governance address.
-     * @dev This is the address that can call the governance functions.
-     * @param _governance The address to set as the governance address.
-     */
-    function setGovernance(address _governance) external onlyManagement {
-        require(_governance != address(0), "ZERO_ADDRESS");
-        governance = _governance;
-        emit GovernanceSet(_governance);
     }
 
     /**

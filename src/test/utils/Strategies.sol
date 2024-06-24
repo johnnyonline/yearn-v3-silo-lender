@@ -102,14 +102,12 @@ contract Strategies is ExtendedTest {
         new SiloStrategyFactory(
             ISiloRepository(address(0)),
             management,
-            governance,
             performanceFeeRecipient
         );
 
         SiloStrategyFactory factory = new SiloStrategyFactory(
             ISiloRepository(siloRepository),
             management,
-            governance,
             performanceFeeRecipient
         );
 

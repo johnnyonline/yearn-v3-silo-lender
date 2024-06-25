@@ -28,6 +28,16 @@ contract SiloStrategyFactory {
     );
 
     /**
+     * @notice Emitted when the management address is set.
+     */
+    event ManagementSet(address management);
+
+    /**
+     * @notice Emitted when the performance fee recipient address is set.
+     */
+    event PerformanceFeeRecipientSet(address performanceFeeRecipient);
+
+    /**
      * @dev The management address.
      */
     address public management;
@@ -43,6 +53,11 @@ contract SiloStrategyFactory {
     ISiloRepository public immutable repository;
 
     /**
+     * @dev Mapping of deployed strategies.
+     */
+    mapping(address asset => mapping(address collateral => address strategy)) public deployments;
+
+    /**
      * @notice Used to initialize the strategy factory on deployment.
      * @param _repository Address of the Silo repository.
      * @param _management Address of the management account.
@@ -51,6 +66,7 @@ contract SiloStrategyFactory {
     constructor(ISiloRepository _repository, address _management, address _performanceFeeRecipient) {
         require(Ping.pong(_repository.siloRepositoryPing), "invalid silo repository");
         require(_management != address(0), "invalid management");
+        require(_performanceFeeRecipient != address(0), "invalid performance fee recipient");
 
         repository = _repository;
         management = _management;
@@ -60,6 +76,10 @@ contract SiloStrategyFactory {
     modifier onlyManagement() {
         require(msg.sender == management, "!management");
         _;
+    }
+
+    function isDeployedAsset(address _asset, address _collateral) public view returns (bool) {
+        return deployments[_asset][_collateral] != address(0);
     }
 
     /**
@@ -76,16 +96,16 @@ contract SiloStrategyFactory {
         address _strategyAsset,
         address _incentivesController,
         string memory _name
-    ) external returns (IStrategyInterface _strategy) {
+    ) external onlyManagement returns (IStrategyInterface _strategy) {
+        if (isDeployedAsset(_strategyAsset, _siloAsset)) revert("already deployed");
 
         address _silo = repository.getSilo(_siloAsset);
-        address _share = address(
-            ISilo(_silo).assetStorage(_strategyAsset).collateralToken
-        );
+        address _share = address(ISilo(_silo).assetStorage(_strategyAsset).collateralToken);
         require(_share != address(0), "wrong silo");
 
         _strategy = IStrategyInterface(address(
             new SiloStrategy(
+                address(repository),
                 _silo,
                 _share,
                 _strategyAsset,
@@ -94,9 +114,13 @@ contract SiloStrategyFactory {
             )
         ));
 
+        //slither-disable-next-line reentrancy-no-eth
+        deployments[_strategyAsset][_siloAsset] = address(_strategy);
+
         _strategy.setPerformanceFeeRecipient(performanceFeeRecipient);
         _strategy.setPendingManagement(_management);
 
+        //slither-disable-next-line reentrancy-events
         emit StrategyDeployed(
             _management,
             address(_strategy),
@@ -116,6 +140,7 @@ contract SiloStrategyFactory {
     function setManagement(address _management) external onlyManagement {
         require(_management != address(0), "ZERO_ADDRESS");
         management = _management;
+        emit ManagementSet(_management);
     }
 
     /**
@@ -123,10 +148,9 @@ contract SiloStrategyFactory {
      * @dev This is the address that will receive the performance fee.
      * @param _performanceFeeRecipient The address to set as the performance fee recipient address.
      */
-    function setPerformanceFeeRecipient(
-        address _performanceFeeRecipient
-    ) external onlyManagement {
+    function setPerformanceFeeRecipient(address _performanceFeeRecipient) external onlyManagement {
         require(_performanceFeeRecipient != address(0), "ZERO_ADDRESS");
         performanceFeeRecipient = _performanceFeeRecipient;
+        emit PerformanceFeeRecipientSet(_performanceFeeRecipient);
     }
 }

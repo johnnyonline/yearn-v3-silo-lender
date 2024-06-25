@@ -8,6 +8,8 @@ import {BaseHealthCheck, ERC20} from "@periphery/Bases/HealthCheck/BaseHealthChe
 import {TradeFactorySwapper} from "@periphery/swappers/TradeFactorySwapper.sol";
 
 import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
+import {IGuardedLaunch} from "@silo/interfaces/IGuardedLaunch.sol";
+import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 import {IShareToken} from "@silo/interfaces/IShareToken.sol";
 import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
@@ -31,13 +33,19 @@ import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
  * @notice A strategy that deposits funds into a Silo and harvests incentives.
  */
 contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
+
     using SafeERC20 for ERC20;
     using EasyMathV2 for uint256;
 
     /**
      * @dev The incentives controller that pays the reward token.
      */
-    IAaveIncentivesController public immutable incentivesController;
+    IAaveIncentivesController public incentivesController;
+
+    /**
+     * @dev The Silo repository contract.
+     */
+    ISiloRepository public immutable repository;
 
     /**
      * @dev The Silo that the strategy is using.
@@ -50,7 +58,13 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     IShareToken public immutable share;
 
     /**
+     * @dev The dust threshold for the strategy. Any amount below this will not be deposited.
+     */
+    uint256 private constant DUST_THRESHOLD = 10_000;
+
+    /**
      * @notice Used to initialize the strategy on deployment.
+     * @param _repository Address of the Silo repository.
      * @param _silo Address of the Silo that the strategy is using.
      * @param _share Address of the share token that represents the strategy's share of the Silo.
      * @param _asset Address of the underlying asset.
@@ -58,12 +72,14 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param _name Name the strategy will use.
      */
     constructor(
+        address _repository,
         address _silo,
         address _share,
         address _asset,
         address _incentivesController,
         string memory _name
     ) BaseHealthCheck(_asset, _name) {
+        repository = ISiloRepository(_repository);
         silo = ISilo(_silo);
         share = IShareToken(_share);
         incentivesController = IAaveIncentivesController(_incentivesController);
@@ -79,11 +95,24 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         _setTradeFactory(_tradeFactory, address(asset));
     }
 
-    function addTokens(
-        address[] memory _from,
-        address[] memory _to
+    function setIncentivesController(address _incentivesController) external onlyManagement {
+        require(_incentivesController != address(0), "!incentivesController");
+        incentivesController = IAaveIncentivesController(_incentivesController);
+    }
+
+    function addToken(
+        address _from,
+        address _to
     ) external onlyManagement {
-        _addTokens(_from, _to);
+        require(_from != address(asset), "!asset");
+        _addToken(_from, _to);
+    }
+
+    function removeToken(
+        address _from,
+        address _to
+    ) external onlyManagement {
+        _removeToken(_from, _to);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -127,6 +156,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param _amount, The amount of 'asset' to be freed.
      */
     function _freeFunds(uint256 _amount) internal override {
+        silo.accrueInterest(address(asset));
         silo.withdraw(address(asset), _amount, false);
     }
 
@@ -157,15 +187,18 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         override
         returns (uint256 _totalAssets)
     {
+        silo.accrueInterest(address(asset));
+
         // Only harvest and redeploy if the strategy is not shutdown.
         if (!TokenizedStrategy.isShutdown()) {
-
-            // Check how much we can re-deploy into the yield source.
-            uint256 toDeploy = asset.balanceOf(address(this));
-            // If greater than 0.
-            if (toDeploy > 0) {
-                // Deposit the sold amount back into the yield source.
-                _deployFunds(toDeploy);
+            uint256 _toDeploy = asset.balanceOf(address(this));
+            uint256 _availableDepositLimit = availableDepositLimit(address(0));
+            if (_toDeploy > DUST_THRESHOLD && _availableDepositLimit > DUST_THRESHOLD) {
+                if (_toDeploy <= _availableDepositLimit) {
+                    _deployFunds(_toDeploy);
+                } else {
+                    _deployFunds(_availableDepositLimit);
+                }
             }
         }
 
@@ -174,10 +207,11 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
     }
 
     function _claimRewards() internal override {
-        if (address(incentivesController) != address(0)) {
+        IAaveIncentivesController _incentivesController = incentivesController;
+        if (address(_incentivesController) != address(0)) {
             address[] memory assets = new address[](1);
             assets[0] = address(share);
-            incentivesController.claimRewards(
+            _incentivesController.claimRewards(
                 assets,
                 type(uint256).max,
                 address(this)
@@ -243,17 +277,31 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      * @param . The address that is depositing into the strategy.
      * @return . The available amount the `_owner` can deposit in terms of `asset`
      *
-     
-    function availableDepositLimit(
-        address _owner
-    ) public view override returns (uint256) {
-        TODO: If desired Implement deposit limit logic and any needed state variables .
-
-        EX:
-            uint256 totalAssets = TokenizedStrategy.totalAssets();
-            return totalAssets >= depositLimit ? 0 : depositLimit - totalAssets;
-    }
     */
+    function availableDepositLimit(
+        address // _owner
+    ) public view override returns (uint256) {
+        if (silo.depositPossible(address(asset), address(this))) {
+            ISilo.AssetStorage memory _assetState = silo.assetStorage(address(asset));
+
+            uint256 _decimals = 10 ** ERC20(address(asset)).decimals();
+            uint256 _price = repository.priceProvidersRepository().getPrice(address(asset));
+            uint256 _totalDepositsValue = _price * (_assetState.totalDeposits + _assetState.collateralOnlyDeposits) / _decimals;
+
+            uint256 _maxDepositsValue = IGuardedLaunch(address(repository)).getMaxSiloDepositsValue(address(silo), address(asset));
+            if (_maxDepositsValue == type(uint256).max) return type(uint256).max;
+
+            if (_maxDepositsValue > _totalDepositsValue) {
+                uint256 _availableDeposit = (_maxDepositsValue - _totalDepositsValue) * _decimals / _price;
+                if (_availableDeposit == 0) return 0;
+                return _availableDeposit - 1;
+            } else {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
+    }
 
     /**
      * @notice Gets the max amount of `asset` that can be withdrawn.
@@ -303,6 +351,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
      *
      */
     function _emergencyWithdraw(uint256 _amount) internal override {
+        silo.accrueInterest(address(asset));
         _freeFunds(
             Math.min(
                 _amount,

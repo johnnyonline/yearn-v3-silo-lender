@@ -114,11 +114,13 @@ contract SiloStrategyFactory {
             )
         ));
 
+        //slither-disable-next-line reentrancy-no-eth
         deployments[_strategyAsset][_siloAsset] = address(_strategy);
 
         _strategy.setPerformanceFeeRecipient(performanceFeeRecipient);
         _strategy.setPendingManagement(_management);
 
+        //slither-disable-next-line reentrancy-events
         emit StrategyDeployed(
             _management,
             address(_strategy),

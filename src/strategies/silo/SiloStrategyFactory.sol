@@ -53,6 +53,11 @@ contract SiloStrategyFactory {
     ISiloRepository public immutable repository;
 
     /**
+     * @dev Mapping of deployed strategies.
+     */
+    mapping(address asset => mapping(address collateral => address strategy)) public deployments;
+
+    /**
      * @notice Used to initialize the strategy factory on deployment.
      * @param _repository Address of the Silo repository.
      * @param _management Address of the management account.
@@ -73,6 +78,10 @@ contract SiloStrategyFactory {
         _;
     }
 
+    function isDeployedAsset(address _asset, address _collateral) public view returns (bool) {
+        return deployments[_asset][_collateral] != address(0);
+    }
+
     /**
      * @notice Used to deploy a new Silo strategy.
      * @param _management Address of the management account.
@@ -87,12 +96,11 @@ contract SiloStrategyFactory {
         address _strategyAsset,
         address _incentivesController,
         string memory _name
-    ) external returns (IStrategyInterface _strategy) {
+    ) external onlyManagement returns (IStrategyInterface _strategy) {
+        if (isDeployedAsset(_strategyAsset, _siloAsset)) revert("already deployed");
 
         address _silo = repository.getSilo(_siloAsset);
-        address _share = address(
-            ISilo(_silo).assetStorage(_strategyAsset).collateralToken
-        );
+        address _share = address(ISilo(_silo).assetStorage(_strategyAsset).collateralToken);
         require(_share != address(0), "wrong silo");
 
         _strategy = IStrategyInterface(address(
@@ -105,6 +113,8 @@ contract SiloStrategyFactory {
                 _name
             )
         ));
+
+        deployments[_strategyAsset][_siloAsset] = address(_strategy);
 
         _strategy.setPerformanceFeeRecipient(performanceFeeRecipient);
         _strategy.setPendingManagement(_management);
@@ -136,9 +146,7 @@ contract SiloStrategyFactory {
      * @dev This is the address that will receive the performance fee.
      * @param _performanceFeeRecipient The address to set as the performance fee recipient address.
      */
-    function setPerformanceFeeRecipient(
-        address _performanceFeeRecipient
-    ) external onlyManagement {
+    function setPerformanceFeeRecipient(address _performanceFeeRecipient) external onlyManagement {
         require(_performanceFeeRecipient != address(0), "ZERO_ADDRESS");
         performanceFeeRecipient = _performanceFeeRecipient;
         emit PerformanceFeeRecipientSet(_performanceFeeRecipient);

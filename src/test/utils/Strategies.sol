@@ -111,6 +111,17 @@ contract Strategies is ExtendedTest {
             performanceFeeRecipient
         );
 
+        vm.expectRevert("!management");
+        factory.deploySiloStrategy(
+            management,
+            _crv,
+            collateralAsset,
+            incentivesController,
+            "crvUSD/YFI SiloLlamaStrategy"
+        );
+
+        vm.startPrank(management);
+
         vm.expectRevert("wrong silo");
         factory.deploySiloStrategy(
             management,
@@ -136,6 +147,17 @@ contract Strategies is ExtendedTest {
             incentivesController,
             "crvUSD/YFI SiloLlamaStrategy"
         ));
+
+        vm.expectRevert("already deployed");
+        factory.deploySiloStrategy(
+            management,
+            collateralAsset,
+            borrowedAsset,
+            incentivesController,
+            "crvUSD/YFI SiloLlamaStrategy"
+        );
+
+        vm.stopPrank();
     }
 
     function _earnSiloInterest() private {

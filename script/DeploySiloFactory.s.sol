@@ -18,9 +18,10 @@ contract DeploySiloFactory is Script {
 
     // address private constant MANAGEMENT = 0x16388463d60FFE0661Cf7F1f31a7D658aC790ff7; // mainnet
     address private constant MANAGEMENT = 0x1dcAD21ccD74b7A8A7BC7D19894de8Af41D9ea03; // arbitrum
-    address private constant PERFORMANCE_FEE_RECIPIENT = 0x5C1E6bA712e9FC3399Ee7d5824B6Ec68A0363C02; // artemis wallet
+    address private constant PERFORMANCE_FEE_RECIPIENT = 0x318d0059efE546b5687FA6744aF4339391153981; // yearn deployer
 
     // ISiloRepository private constant REPO = ISiloRepository(0xBCd67f35c7A2F212db0AD7f68fC773b5aC15377c); // https://devdocs.silo.finance/security/smart-contracts#silo-llama-ethereum
+    // ISiloRepository private constant REPO = ISiloRepository(0xd998C35B7900b344bbBe6555cc11576942Cf309d); // https://devdocs.silo.finance/security/smart-contracts#silo-legacy-ethereum
     ISiloRepository private constant REPO = ISiloRepository(0x8658047e48CC09161f4152c79155Dac1d710Ff0a); // https://devdocs.silo.finance/security/smart-contracts#silo-arbitrum
 
     function run() external {

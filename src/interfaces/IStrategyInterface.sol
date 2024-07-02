@@ -4,5 +4,7 @@ pragma solidity 0.8.18;
 import {IStrategy} from "@tokenized-strategy/interfaces/IStrategy.sol";
 
 interface IStrategyInterface is IStrategy {
-    //TODO: Add your specific implementation interface in here.
+    function incentivesController() external view returns (address);
+    function repository() external view returns (address);
+    function silo() external view returns (address);
 }

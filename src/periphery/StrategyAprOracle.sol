@@ -1,23 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.18;
 
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {AprOracleBase} from "@periphery/AprOracle/AprOracleBase.sol";
-
-// import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
-
+import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 import {ISilo} from "@silo/interfaces/ISilo.sol";
 import {ISiloRepository} from "@silo/interfaces/ISiloRepository.sol";
 import {IInterestRateModel} from "@silo/interfaces/IInterestRateModel.sol";
+import {IAaveIncentivesController} from "@silo/external/aave/interfaces/IAaveIncentivesController.sol";
 import {EasyMathV2} from "@silo/lib/EasyMathV2.sol";
 
 import {IStrategyInterface} from "../interfaces/IStrategyInterface.sol";
-// import {IPoolUtilities} from "../interfaces/IPoolUtilities.sol";
-// import {IRewardStaking} from "../interfaces/IRewardStaking.sol";
-// import {ICurveVault} from "../interfaces/ICurveVault.sol";
-// import {ICvxMining} from "../interfaces/ICvxMining.sol";
-// import {IBooster} from "../interfaces/IBooster.sol";
-
-import "forge-std/console.sol";
 
 interface ISiloRepositoryExtended is ISiloRepository {
     function fees() external view returns (Fees memory);
@@ -25,118 +18,115 @@ interface ISiloRepositoryExtended is ISiloRepository {
 
 contract StrategyAprOracle is AprOracleBase {
 
-    uint256 internal constant PRECISION = 1e18; // dev: same precision as Silo uses for its fee calculations
+    uint256 private constant _PRECISION = 1e18; // dev: same precision as Silo uses for its fee calculations
+    uint256 private constant _SECONDS_IN_YEAR = 60 * 60 * 24 * 365;
 
-    // uint256 internal constant CL_NORMALIZE = 1e10;
-    // uint256 internal constant secondsInOneYear = 60 * 60 * 24 * 365;
+    mapping(address rewardAsset => AggregatorV3Interface oracle) public oracles;
 
-    // address internal constant CRV = 0xD533a949740bb3306d119CC777fa900bA034cd52;
-    // address internal constant CVX = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
+    /*//////////////////////////////////////////////////////////////
+                            CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
 
-    // // Mainnet
-    // IPoolUtilities public constant poolUtilities = IPoolUtilities(0x5Fba69a794F395184b5760DAf1134028608e5Cd1);
-    // ICvxMining public constant cvxMining = ICvxMining(0x3c75BFe6FbfDa3A94E7E7E8c2216AFc684dE5343);
-    // IBooster public constant convexBooster = IBooster(0xF403C135812408BFbE8713b5A23a04b3D48AAE31);
+    constructor(address _governance) AprOracleBase("Silo Lender Strategy APR Oracle", _governance) {}
 
-    // AggregatorV3Interface public constant chainlinkCVXvsUSD = AggregatorV3Interface(0xd962fC30A72A84cE50161031391756Bf2876Af5D);
-    // AggregatorV3Interface public constant chainlinkCRVvsUSD = AggregatorV3Interface(0xCd627aA160A6fA45Eb793D19Ef54f5062F20f33f);
+    /*//////////////////////////////////////////////////////////////
+                                SETTERS
+    //////////////////////////////////////////////////////////////*/
 
-    constructor() AprOracleBase("Strategy APR Oracle", msg.sender) {}
-
-    function aprAfterDebtChange(
-        address _strategy,
-        int256 _delta
-    ) external view override returns (uint256 _totalApr) {
-        address _asset = IStrategyInterface(_strategy).asset();
-        address _silo = IStrategyInterface(_strategy).silo();
-        ISiloRepositoryExtended _repo = ISiloRepositoryExtended(IStrategyInterface(_strategy).repository());
-        _totalApr += _lendAPR(_repo, _silo, _asset, _delta);
-        // console.log("lend apr: ", _totalApr);
-
-        // (uint256 _crvAPR, uint256 _cvxAPR) = _rewardAPR(_curveLendVault, IStrategyInterface(_strategy).PID(), _delta);
-        // console.log("crv apr: ", _crvAPR);
-        // console.log("cvx apr: ", _cvxAPR);
-
-        // _totalApr += _crvAPR + _cvxAPR;
-
-        // console.log("totalApr", _totalApr);
+    function setRewardAssefPriceOracle(AggregatorV3Interface _oracle, address _asset) external onlyGovernance {
+        (, int256 _rewardPrice, , uint256 _updatedAt,) = _oracle.latestRoundData();
+        if (_rewardPrice <= 0 || (block.timestamp - _updatedAt) > 1 days) revert("!oracle");
+        oracles[_asset] = _oracle;
+        emit RewardAssetPriceOracleSet(_oracle, _asset);
     }
 
-    function _lendAPR(
-        ISiloRepositoryExtended _repo,
-        address _silo,
-        address _asset,
-        int256 _delta
-    ) internal view returns (uint256) {
+    /*//////////////////////////////////////////////////////////////
+                                VIEWS
+    //////////////////////////////////////////////////////////////*/
+
+    function aprAfterDebtChange(address _strategy, int256 _delta) external view override returns (uint256) {
+
+        IStrategyInterface strategy_ = IStrategyInterface(_strategy);
+
+        address _silo = strategy_.silo();
+        address _asset = strategy_.asset();
         ISilo.UtilizationData memory _utilizationData = ISilo(_silo).utilizationData(_asset);
-        if (_delta < 0) require(_delta < int256(_utilizationData.totalDeposits), "!delta");
-
-        IInterestRateModel _interestRateModel = _repo.getInterestRateModel(_silo, _asset);
-
-        uint256 _dp = _interestRateModel.DP();
-        if (_delta == 0) {
-            uint256 _utilizationRate = EasyMathV2.calculateUtilization(
-                _dp,
-                _utilizationData.totalDeposits,
-                _utilizationData.totalBorrowAmount
-            );
-            if (_utilizationRate == 0) return 0;
-
-            return
-                (_interestRateModel.getCurrentInterestRate(_silo, _asset, block.timestamp) * _utilizationRate / _dp) *
-                (PRECISION - _repo.fees().protocolShareFee) /
-                PRECISION;
-        }
+        if (_delta < 0) require(uint256(_delta * -1) <= _utilizationData.totalDeposits, "delta exceeds deposits");
 
         uint256 _totalAssetsAfterDelta = uint256(int256(_utilizationData.totalDeposits) + _delta);
-        uint256 _debt = _utilizationData.totalBorrowAmount;
-        require(_debt <= _totalAssetsAfterDelta, "debt exceeds total assets");
+        require(_utilizationData.totalBorrowAmount <= _totalAssetsAfterDelta, "debt exceeds deposits");
 
-        // return _interestRateModel.calculateCurrentInterestRate(
-        //     Config memory _c,
-        //     uint256 _totalDeposits,
-        //     uint256 _totalBorrowAmount,
-        //     uint256 _interestRateTimestamp,
-        //     uint256 _blockTimestamp
-        // ) public pure virtual override returns (uint256 rcur) {
+        return
+            _lendAPR(strategy_, _silo, _asset, _totalAssetsAfterDelta, _utilizationData) +
+            _rewardAPR(strategy_, _totalAssetsAfterDelta, _utilizationData.totalDeposits);
     }
 
-    // function _rewardAPR(
-    //     ICurveVault _curveLendVault,
-    //     uint256 _pid,
-    //     int256 _delta
-    // ) internal view returns (uint256 _crvRate, uint256 _cvxRate) {
+    /*//////////////////////////////////////////////////////////////
+                                INTERNALS
+    //////////////////////////////////////////////////////////////*/
 
-    //     (,,, IRewardStaking _crvRewards,,) = convexBooster.poolInfo(_pid);
-    //     uint256 _stakedSupply = _crvRewards.totalSupply();
-    //     if (block.timestamp < _crvRewards.periodFinish()){
-    //         _crvRate = _crvRewards.rewardRate();
-    //     } else {
-    //         return (0, 0);
-    //     }
+    /// @dev Assumes lent asset is a stablecoin and is worth $1
+    function _lendAPR(
+        IStrategyInterface _strategy,
+        address _silo,
+        address _asset,
+        uint256 _totalAssetsAfterDelta,
+        ISilo.UtilizationData memory _utilizationData
+    ) internal view returns (uint256) {
 
-    //     if (_delta != 0) {
-    //         if (_delta > 0) {
-    //             _stakedSupply += _curveLendVault.convertToShares(uint256(_delta));
-    //         } else {
-    //             require(_delta < int256(_curveLendVault.totalAssets()), "StrategyAprOracle: delta exceeds total assets");
-    //             _stakedSupply -= _curveLendVault.convertToShares(uint256(-_delta));
-    //         }
-    //     }
+        ISiloRepositoryExtended _repo = ISiloRepositoryExtended(_strategy.repository());
+        IInterestRateModel _interestRateModel = _repo.getInterestRateModel(_silo, _asset);
 
-    //     if (_stakedSupply > 0) {
-    //         _crvRate = _crvRate * WAD / _stakedSupply;
-    //         _cvxRate = cvxMining.ConvertCrvToCvx(_crvRate);
+        uint256 _rate;
+        if (_totalAssetsAfterDelta == _utilizationData.totalDeposits) { // delta == 0
+            _rate = _interestRateModel.getCurrentInterestRate(_silo, _asset, block.timestamp);
+        } else {
+            _rate = _interestRateModel.calculateCurrentInterestRate(
+                _interestRateModel.getConfig(_silo, _asset),
+                _totalAssetsAfterDelta,
+                _utilizationData.totalBorrowAmount,
+                _utilizationData.interestRateTimestamp,
+                block.timestamp
+            );
+        }
 
-    //         uint256 _pps = _curveLendVault.pricePerShare();
+        uint256 _dp = _interestRateModel.DP();
+        uint256 _utilizationRate = EasyMathV2.calculateUtilization(_dp, _totalAssetsAfterDelta, _utilizationData.totalBorrowAmount);
+        if (_utilizationRate == 0) return 0;
 
-    //         (, int256 _crvPrice,,,) = chainlinkCRVvsUSD.latestRoundData(); // todo - add sanity checks
-    //         _crvRate = poolUtilities.apr(_crvRate, uint256(_crvPrice) * CL_NORMALIZE, _pps);
+        return (_rate * _utilizationRate / _dp) * (_PRECISION - _repo.fees().protocolShareFee) / _PRECISION;
+    }
 
-    //         (, int256 _cvxPrice,,,) = chainlinkCVXvsUSD.latestRoundData(); // todo - add sanity checks
-    //         _cvxRate = poolUtilities.apr(_cvxRate, uint256(_cvxPrice) * CL_NORMALIZE, _pps);
-    //     } else {
-    //         return (0, 0);
-    //     }
-    // }
+    function _rewardAPR(
+        IStrategyInterface _strategy,
+        uint256 _totalAssetsAfterDelta,
+        uint256 _totalAssets
+    ) internal view returns (uint256) {
+
+        IAaveIncentivesController _incentivesController = IAaveIncentivesController(_strategy.incentivesController());
+        (, uint256 _ratePerSecond, ) = _incentivesController.getAssetData(_strategy.share());
+        if (_ratePerSecond == 0) return 0;
+
+        AggregatorV3Interface _rewardPriceOracle = oracles[_incentivesController.REWARD_TOKEN()];
+        (, int256 _rewardPrice, , uint256 _updatedAt,) = _rewardPriceOracle.latestRoundData();
+        if (_rewardPrice <= 0 || (block.timestamp - _updatedAt) > 1 days) revert("!oracle");
+
+        IERC20Metadata _share = IERC20Metadata(_strategy.share());
+
+        uint256 _shareDecimals = 10 ** _share.decimals();
+        uint256 _totalSupplyAfterDelta =
+            EasyMathV2.toShare(_shareDecimals, _totalAssets, _share.totalSupply()) *
+            _totalAssetsAfterDelta /
+            _shareDecimals;
+
+        return
+            _ratePerSecond * _SECONDS_IN_YEAR * _shareDecimals / _totalSupplyAfterDelta *
+            uint256(_rewardPrice) / (10 ** _rewardPriceOracle.decimals());
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event RewardAssetPriceOracleSet(AggregatorV3Interface _oracle, address _asset);
 }

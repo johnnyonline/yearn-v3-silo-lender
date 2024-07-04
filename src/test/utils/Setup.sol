@@ -41,6 +41,8 @@ contract Setup is Strategies, IEvents {
 
         // Set asset
         asset = ERC20(tokenAddrs["crvUSD"]);
+        // asset = ERC20(tokenAddrs["USDC.e - Arbi"]);
+        // asset = ERC20(tokenAddrs["USDC.e - OP"]);
 
         // Set decimals
         decimals = asset.decimals();
@@ -146,5 +148,6 @@ contract Setup is Strategies, IEvents {
         tokenAddrs["CRV"] = 0xD533a949740bb3306d119CC777fa900bA034cd52;
         tokenAddrs["crvUSD"] = 0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E;
         tokenAddrs["USDC.e - Arbi"] = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+        tokenAddrs["USDC.e - OP"] = 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85;
     }
 }

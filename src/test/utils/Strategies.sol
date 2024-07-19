@@ -26,12 +26,14 @@ contract Strategies is ExtendedTest {
     address private constant _yfi = 0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e;
 
     // Arbitrum
-    address private constant _usdcweETHSilo = 0x7bec832FF8060cD396645Ccd51E9E9B0E5d8c6e4;
+    address private constant _usdcwstETHSilo = 0xA8897b4552c075e884BDB8e7b704eB10DB29BF0D;
     address private constant _siloRepositoryARB = 0x8658047e48CC09161f4152c79155Dac1d710Ff0a;
     address private constant _usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // 6 decimals
     address private constant _incentivesControllerARB = 0x7e5BFBb25b33f335e34fa0d78b878092931F8D20; // SILO rewards
-    address private constant _weETH = 0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe;
+    address private constant _wstETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
     address private constant _crvArb = 0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978;
+
+    SiloStrategyFactory private constant _actualFactory = SiloStrategyFactory(0xDd737dADA46F3A111074dCE29B9430a7EA000092);
 
     // Optimism
     address private constant _usdcwBTCSilo = 0x03d0b417b7Bcd0C399f1db3321985353a515B2b8;
@@ -46,20 +48,20 @@ contract Strategies is ExtendedTest {
     address private _borrower = address(420);
 
     // Ethereum
-    address private constant silo = _crvUSDYFISilo;
-    address private constant borrowedAsset = _crvUSD;
-    address private constant collateralAsset = _yfi;
-    address private constant incentivesController = _incentivesControllerLlama;
-    address private constant siloRepository = _siloRepositoryLlama;
-    address private constant _crv = _crvEth;
+    // address private constant silo = _crvUSDYFISilo;
+    // address private constant borrowedAsset = _crvUSD;
+    // address private constant collateralAsset = _yfi;
+    // address private constant incentivesController = _incentivesControllerLlama;
+    // address private constant siloRepository = _siloRepositoryLlama;
+    // address private constant _crv = _crvEth;
 
     // Arbitrum
-    // address private constant silo = _usdcArbSilo;
-    // address private constant borrowedAsset = _usdc;
-    // address private constant collateralAsset = _arb;
-    // address private constant incentivesController = _incentivesControllerARB;
-    // address private constant siloRepository = _siloRepositoryARB;
-    // address private constant _crv = _crvArb;
+    address private constant silo = _usdcwstETHSilo;
+    address private constant borrowedAsset = _usdc;
+    address private constant collateralAsset = _wstETH;
+    address private constant incentivesController = _incentivesControllerARB;
+    address private constant siloRepository = _siloRepositoryARB;
+    address private constant _crv = _crvArb;
 
     // Optimism
     // address private constant silo = _usdcwBTCSilo;
@@ -74,7 +76,9 @@ contract Strategies is ExtendedTest {
     //////////////////////////////////////////////////////////////*/
 
     function _setUpStrategy() internal returns (address) {
-        return _setUpSiloStrategy();
+        // return _setUpSiloStrategy();
+        vm.prank(management);
+        return address(_actualFactory.deploySiloStrategy(management, collateralAsset, borrowedAsset, incentivesController, "crvUSD/YFI SiloLlamaStrategy"));
     }
 
     function _earnInterest() internal {

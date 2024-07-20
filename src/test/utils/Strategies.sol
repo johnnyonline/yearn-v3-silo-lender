@@ -26,37 +26,59 @@ contract Strategies is ExtendedTest {
     address private constant _yfi = 0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e;
 
     // Arbitrum
-    address private constant _usdcweETHSilo = 0x7bec832FF8060cD396645Ccd51E9E9B0E5d8c6e4;
+    address private constant _usdcwstETHSilo = 0xA8897b4552c075e884BDB8e7b704eB10DB29BF0D;
     address private constant _siloRepositoryARB = 0x8658047e48CC09161f4152c79155Dac1d710Ff0a;
     address private constant _usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // 6 decimals
-    address private constant _incentivesControllerARB = 0x4999873bF8741bfFFB0ec242AAaA7EF1FE74FCE8; // SILO rewards
-    address private constant _weETH = 0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe;
+    address private constant _incentivesControllerARB = 0x7e5BFBb25b33f335e34fa0d78b878092931F8D20; // SILO rewards
+    address private constant _wstETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
     address private constant _crvArb = 0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978;
+
+    SiloStrategyFactory private constant _actualFactory = SiloStrategyFactory(0xDd737dADA46F3A111074dCE29B9430a7EA000092);
+
+    // Optimism
+    address private constant _usdcwBTCSilo = 0x03d0b417b7Bcd0C399f1db3321985353a515B2b8;
+    address private constant _siloRepositoryOP = 0xD2767dAdED5910bbc205811FdbD2eEFd460AcBe9;
+    address private constant _usdcOP = 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85;
+    address private constant _incentivesControllerOP = 0x847D9420643e117798e803d9C5F0e406277CB622;
+    address private constant _wBTC = 0x68f180fcCe6836688e9084f035309E29Bf0A2095;
+    address private constant _snxOP = 0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4;
 
     // ----
 
     address private _borrower = address(420);
 
-    address private constant silo = _crvUSDYFISilo;
-    address private constant borrowedAsset = _crvUSD;
-    address private constant collateralAsset = _yfi;
-    address private constant incentivesController = _incentivesControllerLlama;
-    address private constant siloRepository = _siloRepositoryLlama;
-    address private constant _crv = _crvEth;
+    // Ethereum
+    // address private constant silo = _crvUSDYFISilo;
+    // address private constant borrowedAsset = _crvUSD;
+    // address private constant collateralAsset = _yfi;
+    // address private constant incentivesController = _incentivesControllerLlama;
+    // address private constant siloRepository = _siloRepositoryLlama;
+    // address private constant _crv = _crvEth;
 
-    // address private constant silo = _usdcweETHSilo;
-    // address private constant borrowedAsset = _usdc;
-    // address private constant collateralAsset = _weETH;
-    // address private constant incentivesController = _incentivesControllerARB;
-    // address private constant siloRepository = _siloRepositoryARB;
-    // address private constant _crv = _crvArb;
+    // Arbitrum
+    address private constant silo = _usdcwstETHSilo;
+    address private constant borrowedAsset = _usdc;
+    address private constant collateralAsset = _wstETH;
+    address private constant incentivesController = _incentivesControllerARB;
+    address private constant siloRepository = _siloRepositoryARB;
+    address private constant _crv = _crvArb;
+
+    // Optimism
+    // address private constant silo = _usdcwBTCSilo;
+    // address private constant borrowedAsset = _usdcOP;
+    // address private constant collateralAsset = _wBTC;
+    // address private constant incentivesController = _incentivesControllerOP;
+    // address private constant siloRepository = _siloRepositoryOP;
+    // address private constant _crv = _snxOP;
 
     /*//////////////////////////////////////////////////////////////
                         GENERAL STRATEGY HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _setUpStrategy() internal returns (address) {
-        return _setUpSiloStrategy();
+        // return _setUpSiloStrategy();
+        vm.prank(management);
+        return address(_actualFactory.deploySiloStrategy(management, collateralAsset, borrowedAsset, incentivesController, "crvUSD/YFI SiloLlamaStrategy"));
     }
 
     function _earnInterest() internal {

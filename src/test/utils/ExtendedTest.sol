@@ -8,7 +8,8 @@ contract ExtendedTest is Test {
     address public user = address(10);
     address public keeper = address(4);
     address public governance = address(5);
-    address public management = address(1);
+    // address public management = address(1);
+    address public management = 0x1dcAD21ccD74b7A8A7BC7D19894de8Af41D9ea03;
     address public performanceFeeRecipient = address(3);
 
     // solhint-disable-next-line

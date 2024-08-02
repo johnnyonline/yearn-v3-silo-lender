@@ -30,6 +30,7 @@ contract Strategies is ExtendedTest {
     address private constant _siloRepositoryARB = 0x8658047e48CC09161f4152c79155Dac1d710Ff0a;
     address private constant _usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // 6 decimals
     address private constant _incentivesControllerARB = 0x7e5BFBb25b33f335e34fa0d78b878092931F8D20; // SILO rewards
+    // 0xCC4933B0405Ae9DDFE05a54d20f56A0447c9EBcF // ARB rewards
     address private constant _wstETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
     address private constant _crvArb = 0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978;
 
@@ -48,20 +49,20 @@ contract Strategies is ExtendedTest {
     address private _borrower = address(420);
 
     // Ethereum
-    // address private constant silo = _crvUSDYFISilo;
-    // address private constant borrowedAsset = _crvUSD;
-    // address private constant collateralAsset = _yfi;
-    // address private constant incentivesController = _incentivesControllerLlama;
-    // address private constant siloRepository = _siloRepositoryLlama;
-    // address private constant _crv = _crvEth;
+    address private constant silo = _crvUSDYFISilo;
+    address private constant borrowedAsset = _crvUSD;
+    address private constant collateralAsset = _yfi;
+    address private constant incentivesController = _incentivesControllerLlama;
+    address private constant siloRepository = _siloRepositoryLlama;
+    address private constant _crv = _crvEth;
 
     // Arbitrum
-    address private constant silo = _usdcwstETHSilo;
-    address private constant borrowedAsset = _usdc;
-    address private constant collateralAsset = _wstETH;
-    address private constant incentivesController = _incentivesControllerARB;
-    address private constant siloRepository = _siloRepositoryARB;
-    address private constant _crv = _crvArb;
+    // address private constant silo = _usdcwstETHSilo;
+    // address private constant borrowedAsset = _usdc;
+    // address private constant collateralAsset = _wstETH;
+    // address private constant incentivesController = _incentivesControllerARB;
+    // address private constant siloRepository = _siloRepositoryARB;
+    // address private constant _crv = _crvArb;
 
     // Optimism
     // address private constant silo = _usdcwBTCSilo;

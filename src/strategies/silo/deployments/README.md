@@ -13,9 +13,9 @@ Set up (arbitrum):
 
 Set up (mainnet):
     - acceptManagement() from committee multisig
-    - setEmergencyAdmin() to XXX
-    - setMaxProfitUnlockTime to 86400 (1 day)
-    - setTradeFactory to whatever the trade factory address is...
+    - setEmergencyAdmin() to 0x16388463d60FFE0661Cf7F1f31a7D658aC790ff7
+    - setMaxProfitUnlockTime to 604800 (7 days)
+    - setTradeFactory to 0xb634316E06cC0B358437CbadD4dC94F1D3a92B3b
     - addToken for SILO => USDC
     - setKeeper to 0x604e586F17cE106B64185A7a0d2c1Da5bAce711E (see yHaaS Network Guide)
 
@@ -24,6 +24,7 @@ Set up (mainnet):
 
 Vaults:
     - crvUSD - 0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F
+    - USDC (Silo LRT) - 0x4Dd0FE8549641A04d7ab4f37dbb541aE7dBb2838
 
 Factory Llama Edition:
     - 0xcfFeB2408ADfbab998f6929054f91d8DD9a9c8A1
@@ -35,7 +36,12 @@ Factory Silo New:
     - 0xbAF4Cb2A7182e5bD4abb54C6F116d56c0E8b588C
 
 Stratagies Silo New:
-    - Silo Lender: USDC/PT-ezETH (26 Sep) - 0x8783C4aAf81B9312AdCCCcC09fa7B36b9d1f624f (need to set up)
+    - Silo Lender: USDC/PT-ezETH (26 Sep) - 0x8783C4aAf81B9312AdCCCcC09fa7B36b9d1f624f
+    - Silo Lender: USDC/PT-eETH (26 Sep) - 0x2e3daa02411dC9A2cdb7e3409eB2fF0f90154C9A
+    - Silo Lender: USDC/PT-pufETH (26 Sep) - 0x333f4f2a8bc9eDbDeB1f913b147bB47f76919956
+    - Silo Lender: USDC/PT-sUSDE (26 Sep) - 0x6d197c7a600788BC2A996460e70B91995Bf70Ce2
+    - Silo Lender: USDC/ezETH - 0x6D6092C129601e59938beAf695858E03850E51C0
+    - Silo Lender: USDC/weETH - 0xF232C4b675c9e8541712b7Ea32dCb4cfbB93AB80
 
 ------------ Arbitrum ------------
 
@@ -48,3 +54,6 @@ Factory:
 Stratagies:
     - Silo Lender: USDC.e/wstETH - 0x127A7F610cc704Be6122dfa76eb61E84C9cb0Efd
     - Silo Lender: USDC.e/wBTC - 0x2d25Ce68AAd6Ffef1585ff05bC621db1F9F2E499
+
+TradeFactory:
+    - 0xE8228A2E7102ce51Bb73115e2964A233248398B9

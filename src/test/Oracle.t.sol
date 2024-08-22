@@ -6,7 +6,7 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 import "forge-std/console.sol";
 import {Setup} from "./utils/Setup.sol";
 
-import {StrategyAprOracle} from "../periphery/StrategyAprOracle.sol";
+import {SiloUsdcLenderAprOracle} from "../periphery/SiloUsdcLenderAprOracle.sol";
 
 contract OracleTest is Setup {
 
@@ -14,11 +14,11 @@ contract OracleTest is Setup {
     address public op = 0x4200000000000000000000000000000000000042;
     AggregatorV3Interface public opOracle = AggregatorV3Interface(0x0D276FC14719f9292D5C1eA2198673d1f4269246);
 
-    StrategyAprOracle public oracle;
+    SiloUsdcLenderAprOracle public oracle;
 
     function setUp() public override {
         super.setUp();
-        oracle = new StrategyAprOracle(management);
+        oracle = new SiloUsdcLenderAprOracle(management);
     }
 
     function checkOracle(address _strategy, uint256 _delta) public {
@@ -27,10 +27,10 @@ contract OracleTest is Setup {
             // Check set up
             vm.expectRevert("!governance");
             vm.prank(user);
-            oracle.setRewardAssefPriceOracle(opOracle, op);
+            oracle.setRewardAssetPriceOracle(opOracle, op);
 
             vm.prank(management);
-            oracle.setRewardAssefPriceOracle(opOracle, op);
+            oracle.setRewardAssetPriceOracle(opOracle, op);
 
             address _rewardTokenPriceOracle = address(oracle.oracles(op));
             assertEq(_rewardTokenPriceOracle, address(opOracle), "oracle");

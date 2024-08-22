@@ -16,7 +16,7 @@ interface ISiloRepositoryExtended is ISiloRepository {
     function fees() external view returns (Fees memory);
 }
 
-contract StrategyAprOracle is AprOracleBase {
+contract SiloUsdcLenderAprOracle is AprOracleBase {
 
     uint256 private constant _PRECISION = 1e18; // dev: same precision as Silo uses for its fee calculations
     uint256 private constant _SECONDS_IN_YEAR = 60 * 60 * 24 * 365;
@@ -27,13 +27,13 @@ contract StrategyAprOracle is AprOracleBase {
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _governance) AprOracleBase("Silo Lender Strategy APR Oracle", _governance) {}
+    constructor(address _governance) AprOracleBase("Silo USDC Lender APR Oracle", _governance) {}
 
     /*//////////////////////////////////////////////////////////////
                                 SETTERS
     //////////////////////////////////////////////////////////////*/
 
-    function setRewardAssefPriceOracle(AggregatorV3Interface _oracle, address _asset) external onlyGovernance {
+    function setRewardAssetPriceOracle(AggregatorV3Interface _oracle, address _asset) external onlyGovernance {
         (, int256 _rewardPrice, , uint256 _updatedAt,) = _oracle.latestRoundData();
         if (_rewardPrice <= 0 || (block.timestamp - _updatedAt) > 1 days) revert("!oracle");
         oracles[_asset] = _oracle;

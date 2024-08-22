@@ -115,6 +115,10 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         _removeToken(_from, _to);
     }
 
+    function claimRewards() external override onlyKeepers {
+        _claimRewards();
+    }
+
     /*//////////////////////////////////////////////////////////////
                 NEEDED TO BE OVERRIDDEN BY STRATEGIST
     //////////////////////////////////////////////////////////////*/
@@ -188,6 +192,7 @@ contract SiloStrategy is BaseHealthCheck, TradeFactorySwapper {
         returns (uint256 _totalAssets)
     {
         silo.accrueInterest(address(asset));
+        _claimRewards();
 
         // Only harvest and redeploy if the strategy is not shutdown.
         if (!TokenizedStrategy.isShutdown()) {

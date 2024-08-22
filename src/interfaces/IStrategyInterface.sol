@@ -8,4 +8,5 @@ interface IStrategyInterface is IStrategy {
     function repository() external view returns (address);
     function share() external view returns (address);
     function silo() external view returns (address);
+    function claimRewards() external;
 }

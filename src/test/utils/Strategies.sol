@@ -77,9 +77,9 @@ contract Strategies is ExtendedTest {
     //////////////////////////////////////////////////////////////*/
 
     function _setUpStrategy() internal returns (address) {
-        // return _setUpSiloStrategy();
-        vm.prank(management);
-        return address(_actualFactory.deploySiloStrategy(management, collateralAsset, borrowedAsset, incentivesController, "crvUSD/YFI SiloLlamaStrategy"));
+        return _setUpSiloStrategy();
+        // vm.prank(management);
+        // return address(_actualFactory.deploySiloStrategy(management, collateralAsset, borrowedAsset, incentivesController, "crvUSD/YFI SiloLlamaStrategy"));
     }
 
     function _earnInterest() internal {

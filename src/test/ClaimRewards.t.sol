@@ -21,9 +21,6 @@ contract ClaimRewardsTest is Setup {
         vm.prank(keeper);
         strategy.claimRewards();
 
-        vm.prank(keeper);
-        strategy.claimRewards();
-
         vm.prank(management);
         strategy.claimRewards();
     }

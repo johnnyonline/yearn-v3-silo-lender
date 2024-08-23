@@ -43,3 +43,12 @@ contract DeploySiloFactory is Script {
         vm.stopBroadcast();
     }
 }
+
+//         address _repository, // 0xbACBBefda6fD1FbF5a2d6A79916F4B6124eD2D49
+//         address _silo, // 0x26a334F76A1aC40Bb6094131f7D30BBA0c08D4c6
+//         address _share, // 0x4482E26ee5fEB318c2EBe0e00891f834739949C6
+//         address _asset, // 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+//         address _incentivesController, // 0xB14F20982F2d1E5933362f5A796736D9ffa220E4
+//         string memory _name // Silo Lender: USDC/weETH
+--constructor-args $(cast abi-encode "constructor(address,address,address,address,address,string)" 0xbACBBefda6fD1FbF5a2d6A79916F4B6124eD2D49 0x26a334F76A1aC40Bb6094131f7D30BBA0c08D4c6 0x4482E26ee5fEB318c2EBe0e00891f834739949C6 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 0xB14F20982F2d1E5933362f5A796736D9ffa220E4 "Silo Lender: USDC/weETH")
+forge verify-contract --etherscan-api-key BX1TIHEAARY5TKZD4N6BH931APXEJRDR3V --watch --compiler-version v0.8.18+commit.87f61d96 0x262683DaFa4218f6B62Dd5Ee23d233Af6E7a0F33 src/ERC404/BaseERC404.sol:BaseERC404

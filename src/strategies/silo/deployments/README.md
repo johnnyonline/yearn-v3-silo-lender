@@ -19,6 +19,10 @@ Set up (mainnet):
     - setTradeFactory to 0xb634316E06cC0B358437CbadD4dC94F1D3a92B3b
     - addToken for SILO (0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8) => USDC (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)
 
+When deprecating a strategy:
+    - setKeeper() back to msig from yHAAS
+    - make sure yHAAS is aware of this change
+
 
 ------------ Mainnet ------------
 
@@ -55,10 +59,14 @@ Stratagies Silo New (new Factory, with manual rewards claiming):
     - Silo Lender: USDC/pzETH - 0xA9c16bBA9078C4d8c341847307D7F1f86950411c
     - Silo Lender: USDC/Re7LRT - 0x8B8ccc510d3fC4CC9B5E0f9c0611e26f4eF8Cd77
 
+APR Oracle:
+    - 0x365F901dfD546D7b9a4a8C3Cca4a826a3eE000B2
+
 ------------ Arbitrum ------------
 
 Vaults:
     - USDC.e - 0x2e48847FE29C3883c98125Cb2C44244d6602d549
+    - USDC.e-2 - 0x9FA306b1F4a6a83FEC98d8eBbaBEDfF78C407f6B
 
 Factory:
     - 0xDd737dADA46F3A111074dCE29B9430a7EA000092
@@ -74,3 +82,6 @@ Stratagies (new Factory, with manual rewards claiming):
 
 TradeFactory:
     - 0xE8228A2E7102ce51Bb73115e2964A233248398B9
+
+APR Oracle:
+    - 0xEB3d79b238Ea547a4A37a448ba37fEc247e2F69e

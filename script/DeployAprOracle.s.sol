@@ -15,6 +15,7 @@ import "forge-std/Script.sol";
 contract DeployAprOracle is Script {
 
     address private constant MANAGEMENT = 0x1dcAD21ccD74b7A8A7BC7D19894de8Af41D9ea03; // arbitrum
+    // address private constant MANAGEMENT = 0x6A16CFA0dF474f3cB1BF5bBa595248EEfb404e2b; // mainnet
 
     function run() external {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));

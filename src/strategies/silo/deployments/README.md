@@ -20,8 +20,8 @@ Set up (mainnet):
     - addToken for SILO (0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8) => USDC (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)
 
 When deprecating a strategy:
+    - let Milo know about it in advance, so he can remove the strategy from yHaaS and i can do the final report through SMS in the same tx as i deprecate it
     - setKeeper() back to msig from yHAAS
-    - make sure yHAAS is aware of this change
 
 
 ------------ Mainnet ------------

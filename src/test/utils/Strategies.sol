@@ -48,13 +48,13 @@ contract Strategies is ExtendedTest {
 
     address private _borrower = address(420);
 
-    // Ethereum
-    address private constant silo = _crvUSDYFISilo;
-    address private constant borrowedAsset = _crvUSD;
-    address private constant collateralAsset = _yfi;
-    address private constant incentivesController = _incentivesControllerLlama;
-    address private constant siloRepository = _siloRepositoryLlama;
-    address private constant _crv = _crvEth;
+    // // Ethereum
+    // address private constant silo = _crvUSDYFISilo;
+    // address private constant borrowedAsset = _crvUSD;
+    // address private constant collateralAsset = _yfi;
+    // address private constant incentivesController = _incentivesControllerLlama;
+    // address private constant siloRepository = _siloRepositoryLlama;
+    // address private constant _crv = _crvEth;
 
     // Arbitrum
     // address private constant silo = _usdcwstETHSilo;
@@ -65,12 +65,12 @@ contract Strategies is ExtendedTest {
     // address private constant _crv = _crvArb;
 
     // Optimism
-    // address private constant silo = _usdcwBTCSilo;
-    // address private constant borrowedAsset = _usdcOP;
-    // address private constant collateralAsset = _wBTC;
-    // address private constant incentivesController = _incentivesControllerOP;
-    // address private constant siloRepository = _siloRepositoryOP;
-    // address private constant _crv = _snxOP;
+    address private constant silo = _usdcwBTCSilo;
+    address private constant borrowedAsset = _usdcOP;
+    address private constant collateralAsset = _wBTC;
+    address private constant incentivesController = _incentivesControllerOP;
+    address private constant siloRepository = _siloRepositoryOP;
+    address private constant _crv = _snxOP;
 
     /*//////////////////////////////////////////////////////////////
                         GENERAL STRATEGY HELPERS

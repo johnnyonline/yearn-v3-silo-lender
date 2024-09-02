@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import {SiloUsdcLenderAprOracle} from "../src/periphery/SiloUsdcLenderAprOracle.sol";
+import {DummyOracle} from "../src/periphery/DummyOracle.sol";
 
 import "forge-std/Script.sol";
 
@@ -14,16 +15,18 @@ import "forge-std/Script.sol";
 
 contract DeployAprOracle is Script {
 
-    address private constant MANAGEMENT = 0x1dcAD21ccD74b7A8A7BC7D19894de8Af41D9ea03; // arbitrum
-    // address private constant MANAGEMENT = 0x6A16CFA0dF474f3cB1BF5bBa595248EEfb404e2b; // mainnet
+    // address private constant MANAGEMENT = 0x1dcAD21ccD74b7A8A7BC7D19894de8Af41D9ea03; // arbitrum
+    address private constant MANAGEMENT = 0x6A16CFA0dF474f3cB1BF5bBa595248EEfb404e2b; // mainnet
 
     function run() external {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
         SiloUsdcLenderAprOracle _oracle = new SiloUsdcLenderAprOracle(MANAGEMENT);
+        DummyOracle _dummyOracle = new DummyOracle();
 
         console.log("-----------------------------");
         console.log("oracle deployed at: ", address(_oracle));
+        console.log("dummy oracle deployed at: ", address(_dummyOracle));
         console.log("-----------------------------");
 
         vm.stopBroadcast();

@@ -10,6 +10,7 @@ Set up (arbitrum):
     - setKeeper to 0xE0D19f6b240659da8E87ABbB73446E7B4346Baee (see yHaaS Network Guide)
     - setTradeFactory to 0xE8228A2E7102ce51Bb73115e2964A233248398B9
     - addToken for ARB (0x912CE59144191C1204E64559FE8253a0e49E6548) => USDC.e (0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8)
+    - setOracle in 0x27aD2fFc74F74Ed27e1C0A19F1858dD0963277aE
 
 Set up (mainnet):
     - acceptManagement() from committee multisig
@@ -17,7 +18,7 @@ Set up (mainnet):
     - setMaxProfitUnlockTime to 604800 (7 days)
     - setKeeper to 0x604e586F17cE106B64185A7a0d2c1Da5bAce711E (see yHaaS Network Guide)
     - setTradeFactory to 0xb634316E06cC0B358437CbadD4dC94F1D3a92B3b
-    - addToken for SILO (0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8) => USDC (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)
+    - addToken for SILO (0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8) => USDC (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48) / WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
 
 When deprecating a strategy:
     - let Milo know about it in advance, so he can remove the strategy from yHaaS and i can do the final report through SMS in the same tx as i deprecate it
@@ -58,9 +59,14 @@ Stratagies Silo New (new Factory, with manual rewards claiming):
     - Silo Lender: USDC/amphrETH - 0x8582279459BC320909D034a8f972a2dC6d0f0929
     - Silo Lender: USDC/pzETH - 0xA9c16bBA9078C4d8c341847307D7F1f86950411c
     - Silo Lender: USDC/Re7LRT - 0x8B8ccc510d3fC4CC9B5E0f9c0611e26f4eF8Cd77
+    - Silo Lender: WETH/Re7LRT - 0x91C14409E03570AEDDb2fCe5709032a71a46c9EE
+    - Silo Lender: WETH/amphrETH - 0xe6f11cb8335e4AE364C3A7F941Bbcb6E7ABB2A51
+    - Silo Lender: WETH/pzETH - 0x9ED112B9cED514894D253B3Fdc20d13876B50514
 
 APR Oracle:
-    - 0x365F901dfD546D7b9a4a8C3Cca4a826a3eE000B2
+    - 0x365F901dfD546D7b9a4a8C3Cca4a826a3eE000B2 (faulty manager)
+    - 0x8fD057567D9fF56A42315F8BC1e31FDe5c01F89d
+    - dummy oracle - 0xeA7dE917660a7F42742E371E4C33f39433d92C5D
 
 ------------ Arbitrum ------------
 
@@ -79,6 +85,7 @@ Stratagies:
 Stratagies (new Factory, with manual rewards claiming):
     - Silo Lender wstETH/USDC.e - 0xA4B8873B4629c20f2167c0A2bC33B6AF8699dDc1
     - Silo Lender: USDC.e/wBTC - 0xE82D060687C014B280b65df24AcD94A77251C784
+    - Silo Lender ARB/USDC.e - 0xb739AE19620f7ECB4fb84727f205453aa5bc1AD2
 
 TradeFactory:
     - 0xE8228A2E7102ce51Bb73115e2964A233248398B9

@@ -40,9 +40,10 @@ contract Setup is Strategies, IEvents {
         _setTokenAddrs();
 
         // Set asset
-        asset = ERC20(tokenAddrs["crvUSD"]);
+        // asset = ERC20(tokenAddrs["crvUSD"]);
+        // asset = tokenAddrs["USDC"];
         // asset = ERC20(tokenAddrs["USDC.e - Arbi"]);
-        // asset = ERC20(tokenAddrs["USDC.e - OP"]);
+        asset = ERC20(tokenAddrs["USDC.e - OP"]);
 
         // Set decimals
         decimals = asset.decimals();

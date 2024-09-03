@@ -19,17 +19,27 @@ Set up (mainnet):
     - setKeeper to 0x604e586F17cE106B64185A7a0d2c1Da5bAce711E (see yHaaS Network Guide)
     - setTradeFactory to 0xb634316E06cC0B358437CbadD4dC94F1D3a92B3b
     - addToken for SILO (0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8) => USDC (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48) / WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
+    - setOracle in 0x27aD2fFc74F74Ed27e1C0A19F1858dD0963277aE
 
 When deprecating a strategy:
     - let Milo know about it in advance, so he can remove the strategy from yHaaS and i can do the final report through SMS in the same tx as i deprecate it
     - setKeeper() back to msig from yHAAS
 
+Set up a Vault:
+    - use Factory (with my address as `role_manager`)
+    - attach the strategies you deployed to it
+    - set max debt for them
+    - add to yHAAS
+    - set up aprOracle
+    - add to yDAEMON (e.g. https://github.com/yearn/ydaemon/pull/399)
+    - endorse (e.g. https://github.com/yearn/chief-multisig-officer/pull/1419)
 
 ------------ Mainnet ------------
 
 Vaults:
     - crvUSD - 0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F
     - USDC (Silo LRT) - 0x4Dd0FE8549641A04d7ab4f37dbb541aE7dBb2838
+    - WETH (Silo LRT) - 0x3f540647b08e3E9bcD297e065e42E6CDAF37eBa0
 
 Factory Llama Edition:
     - 0xcfFeB2408ADfbab998f6929054f91d8DD9a9c8A1

@@ -14,13 +14,13 @@ contract DeployVault is Script {
     IVaultFactory factory = IVaultFactory(0x444045c5C13C246e117eD36437303cac8E250aB0); // mainnet
 
     address strategy1 = 0x91C14409E03570AEDDb2fCe5709032a71a46c9EE; // WETH/Re7LRT
-    address strategy2 = 0xe6f11cb8335e4AE364C3A7F941Bbcb6E7ABB2A51; // WETH/amphrETH
+    address strategy2 = 0xe6f11cb8335e4AE364C3A7F941Bbcb6E7ABB2A51; // WETH/amphrETH //
     address strategy3 = 0x9ED112B9cED514894D253B3Fdc20d13876B50514; // WETH/pzETH
 
     function run() external {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-        IVault _vault = (factory.deploy_new_vault(
+        IVault _vault = IVault(factory.deploy_new_vault(
             0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, // WETH
             "Silo-LRT WETH yVault",
             "yvSilo-LRT-WETH",
@@ -35,10 +35,16 @@ contract DeployVault is Script {
 
         // set deposit limit
         _vault.set_deposit_limit(100000000000000);
+        // 6 decimals -  100000000 000000
+        // 18 decimals - 100000000 000000000000000000
+        // 40000000000000000000000
 
         // add strategy and update max debt for strategy
         _vault.add_strategy(strategy1);
         _vault.update_max_debt_for_strategy(strategy1, 10000000000000);
+        // 6 deciamls -  10000000000000
+        // 18 decimals - 10000000000000000000000000
+        // 4000000000000000000000
 
         _vault.add_strategy(strategy2);
         _vault.update_max_debt_for_strategy(strategy2, 10000000000000);

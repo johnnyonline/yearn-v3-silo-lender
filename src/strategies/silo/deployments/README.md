@@ -2,6 +2,7 @@
 
 poolpi deployments - https://hackmd.io/qyPSHxCWT-G4jfMvAPzSqg
 yHaaS Network Guide - https://hackmd.io/@mil0xeth/B1Ux3cLKR
+V3 Roles - https://github.com/yearn/strategist-ms/blob/master/yearn/v3_constants.py#L12
 
 Set up (arbitrum):
     - acceptManagement() from committee multisig
@@ -27,11 +28,12 @@ When deprecating a strategy:
 
 Set up a Vault:
     - use Factory (with my address as `role_manager`)
-    - attach the strategies you deployed to it
-    - set max debt for them
+    - set_role(yearnDeployer, 16383);
+    - _vault.set_deposit_limit(100000000000000);
+    - _vault.add_strategy(strategy1);
+    - _vault.update_max_debt_for_strategy(strategy1, 10000000000000);
     - add to yHAAS
-    - set up aprOracle
-    - add to yDAEMON (e.g. https://github.com/yearn/ydaemon/pull/399)
+    - add to yDAEMON (after it was picked up) (e.g. https://github.com/yearn/ydaemon/pull/399)
     - endorse (e.g. https://github.com/yearn/chief-multisig-officer/pull/1419)
 
 ------------ Mainnet ------------
@@ -75,8 +77,9 @@ Stratagies Silo New (new Factory, with manual rewards claiming):
 
 APR Oracle:
     - 0x365F901dfD546D7b9a4a8C3Cca4a826a3eE000B2 (faulty manager)
-    - 0x8fD057567D9fF56A42315F8BC1e31FDe5c01F89d
+    - usdc - 0x8fD057567D9fF56A42315F8BC1e31FDe5c01F89d
     - dummy oracle - 0xeA7dE917660a7F42742E371E4C33f39433d92C5D
+    - new - 0xD38B163EB243c90f4a089e9818ceEfde29B0C5C8
 
 ------------ Arbitrum ------------
 

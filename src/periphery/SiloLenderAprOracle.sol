@@ -16,7 +16,7 @@ interface ISiloRepositoryExtended is ISiloRepository {
     function fees() external view returns (Fees memory);
 }
 
-contract SiloUsdcLenderAprOracle is AprOracleBase {
+contract SiloLenderAprOracle is AprOracleBase {
 
     uint256 private constant _PRECISION = 1e18; // dev: same precision as Silo uses for its fee calculations
     uint256 private constant _SECONDS_IN_YEAR = 60 * 60 * 24 * 365;
@@ -27,7 +27,7 @@ contract SiloUsdcLenderAprOracle is AprOracleBase {
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _governance) AprOracleBase("Silo USDC Lender APR Oracle", _governance) {}
+    constructor(address _governance) AprOracleBase("Silo Lender APR Oracle", _governance) {}
 
     /*//////////////////////////////////////////////////////////////
                                 SETTERS
@@ -44,7 +44,6 @@ contract SiloUsdcLenderAprOracle is AprOracleBase {
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Assumes lent asset is a stablecoin and is worth $1
     function aprAfterDebtChange(address _strategy, int256 _delta) external view override returns (uint256) {
 
         IStrategyInterface strategy_ = IStrategyInterface(_strategy);
@@ -107,10 +106,6 @@ contract SiloUsdcLenderAprOracle is AprOracleBase {
         (, uint256 _ratePerSecond, ) = _incentivesController.getAssetData(_strategy.share());
         if (_ratePerSecond == 0) return 0;
 
-        AggregatorV3Interface _rewardPriceOracle = oracles[_incentivesController.REWARD_TOKEN()];
-        (, int256 _rewardPrice, , uint256 _updatedAt,) = _rewardPriceOracle.latestRoundData();
-        if (_rewardPrice <= 0 || (block.timestamp - _updatedAt) > 1 days) revert("!oracle");
-
         IERC20Metadata _share = IERC20Metadata(_strategy.share());
 
         uint256 _shareDecimals = 10 ** _share.decimals();
@@ -119,9 +114,19 @@ contract SiloUsdcLenderAprOracle is AprOracleBase {
             _totalAssetsAfterDelta /
             _shareDecimals;
 
+        (uint256 _rewardPrice, uint256 _rewardOracleDecimals) = _getPrice(_incentivesController.REWARD_TOKEN());
+        (uint256 _assetPrice, uint256 _assetOracleDecimals) = _getPrice(_strategy.asset());
+
         return
-            _ratePerSecond * _SECONDS_IN_YEAR * _shareDecimals / _totalSupplyAfterDelta *
-            uint256(_rewardPrice) / (10 ** _rewardPriceOracle.decimals());
+            (_ratePerSecond * _SECONDS_IN_YEAR * _shareDecimals / _totalSupplyAfterDelta *
+            _rewardPrice / (10 ** _rewardOracleDecimals)) / (_assetPrice / (10 ** _assetOracleDecimals));
+    }
+
+    function _getPrice(address _asset) private view returns (uint256,uint256) {
+        AggregatorV3Interface _oracle = oracles[_asset];
+        (, int256 _price, , uint256 _updatedAt,) = _oracle.latestRoundData();
+        if (_price <= 0 || (block.timestamp - _updatedAt) > 1 days) revert("!oracle");
+        return (uint256(_price), _oracle.decimals());
     }
 
     /*//////////////////////////////////////////////////////////////

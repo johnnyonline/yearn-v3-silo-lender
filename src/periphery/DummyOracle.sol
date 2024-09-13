@@ -5,7 +5,7 @@ import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3In
 
 contract DummyOracle is AggregatorV3Interface {
 
-    int256 public constant PRICE = 1e8;
+    int256 public constant PRICE = 4000000; // price at the time of writing $0.03449
 
     function decimals() external pure override returns (uint8) {
         return 8;

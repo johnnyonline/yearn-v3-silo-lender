@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.18;
 
-import {SiloUsdcLenderAprOracle} from "../src/periphery/SiloUsdcLenderAprOracle.sol";
+import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
+
+import {SiloLenderAprOracle} from "../src/periphery/SiloLenderAprOracle.sol";
 import {DummyOracle} from "../src/periphery/DummyOracle.sol";
 
 import "forge-std/Script.sol";
@@ -18,15 +20,24 @@ contract DeployAprOracle is Script {
     // address private constant MANAGEMENT = 0x1dcAD21ccD74b7A8A7BC7D19894de8Af41D9ea03; // arbitrum
     address private constant MANAGEMENT = 0x6A16CFA0dF474f3cB1BF5bBa595248EEfb404e2b; // mainnet
 
+    address public constant REWARD = 0x6f80310CA7F2C654691D1383149Fa1A57d8AB1f8; // SILO
+    address public constant ASSET = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH
+    address public constant WETH_ORACLE = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419; // mainnet
+
     function run() external {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+        address _yearnDeployer = 0x318d0059efE546b5687FA6744aF4339391153981;
 
-        SiloUsdcLenderAprOracle _oracle = new SiloUsdcLenderAprOracle(MANAGEMENT);
+        SiloLenderAprOracle _oracle = new SiloLenderAprOracle(_yearnDeployer);
         DummyOracle _dummyOracle = new DummyOracle();
+
+        _oracle.setRewardAssetPriceOracle(AggregatorV3Interface(address(_dummyOracle)), REWARD);
+        _oracle.setRewardAssetPriceOracle(AggregatorV3Interface(address(WETH_ORACLE)), ASSET);
+
+        _oracle.transferGovernance(MANAGEMENT);
 
         console.log("-----------------------------");
         console.log("oracle deployed at: ", address(_oracle));
-        console.log("dummy oracle deployed at: ", address(_dummyOracle));
         console.log("-----------------------------");
 
         vm.stopBroadcast();

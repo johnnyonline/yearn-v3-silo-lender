@@ -36,6 +36,14 @@ Set up a Vault:
     - add to yDAEMON (after it was picked up) (e.g. https://github.com/yearn/ydaemon/pull/399)
     - endorse (e.g. https://github.com/yearn/chief-multisig-officer/pull/1419)
 
+
+//
+// strat
+1. setIncentivesController
+2. addToken
+// apr oralce
+3. setRewardAssetPriceOracle(AggregatorV3Interface _oracle, address _asset)
+//
 ------------ Mainnet ------------
 
 Vaults:
@@ -105,3 +113,6 @@ TradeFactory:
 
 APR Oracle:
     - 0xEB3d79b238Ea547a4A37a448ba37fEc247e2F69e
+
+SILO Price Oracle:
+    - 0x552f4b850d4963D914E6B2C011B5FE475468d3B8

@@ -3,8 +3,8 @@ pragma solidity ^0.8.18;
 
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
-import {DummyOracle} from "../../periphery/DummyOracle.sol";
-import {SiloUniV3Oracle} from "../../periphery/SiloUniV3Oracle.sol";
+import {DummyOracle} from "../../periphery/priceOracles/DummyOracle.sol";
+import {SiloUniV3Oracle} from "../../periphery/priceOracles/SiloUniV3Oracle.sol";
 import {SiloLenderAprOracle} from "../../periphery/SiloLenderAprOracle.sol";
 
 import "forge-std/Test.sol";

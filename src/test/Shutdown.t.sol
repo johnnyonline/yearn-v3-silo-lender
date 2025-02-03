@@ -16,7 +16,7 @@ contract ShutdownTest is Setup {
         assertEq(strategy.totalAssets(), _amount, "!totalAssets");
 
         // Earn Interest
-        skip(1 days);
+        skip(skipTime);
 
         // Shutdown the strategy
         vm.prank(management);
@@ -47,7 +47,7 @@ contract ShutdownTest is Setup {
         assertEq(strategy.totalAssets(), _amount, "!totalAssets");
 
         // Earn Interest
-        skip(1 days);
+        skip(skipTime);
         _earnInterest();
 
         // Shutdown the strategy
@@ -79,7 +79,7 @@ contract ShutdownTest is Setup {
         assertEq(strategy.totalAssets(), _amount, "!totalAssets");
 
         // Earn Interest
-        skip(1 days);
+        skip(skipTime);
         _earnInterest();
 
         // Shutdown the strategy

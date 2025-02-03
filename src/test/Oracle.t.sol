@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import {AggregatorV3Interface} from "@chainlink/shared/interfaces/AggregatorV3Interface.sol";
 
 import "forge-std/console.sol";
+import "forge-std/console2.sol";
 import {Setup} from "./utils/Setup.sol";
 
 import {SiloUsdcLenderAprOracle} from "../periphery/SiloUsdcLenderAprOracle.sol";
@@ -38,20 +39,20 @@ contract OracleTest is Setup {
         }
 
         uint256 currentApr = oracle.aprAfterDebtChange(_strategy, 0);
-        console.log("Current APR: ", currentApr);
+        console2.log("Current APR: ", currentApr);
 
         // Should be greater than 0 but likely less than 100%
         assertGt(currentApr, 0, "ZERO");
         assertLt(currentApr, 1e18, "+100%");
 
         uint256 negativeDebtChangeApr = oracle.aprAfterDebtChange(_strategy, -int256(_delta));
-        console.log("Negative Debt Change APR: ", negativeDebtChangeApr);
+        console2.log("Negative Debt Change APR: ", negativeDebtChangeApr);
 
         // The apr should go up if deposits go down
         assertLt(currentApr, negativeDebtChangeApr, "negative change");
 
         uint256 positiveDebtChangeApr = oracle.aprAfterDebtChange(_strategy, int256(_delta));
-        console.log("Positive Debt Change APR: ", positiveDebtChangeApr);
+        console2.log("Positive Debt Change APR: ", positiveDebtChangeApr);
 
         assertGt(currentApr, positiveDebtChangeApr, "positive change");
     }
@@ -63,15 +64,17 @@ contract OracleTest is Setup {
 
         mintAndDepositIntoStrategy(strategy, user, _amount);
 
+        vm.roll(block.number + 1);
+
         uint256 _delta = (_amount * _percentChange) / MAX_BPS;
 
         checkOracle(address(strategy), _delta);
     }
 
-    // function test_displayAPR() public {
-    //     uint256 apr = oracle.aprAfterDebtChange(address(strategy), 0);
-    //     console.log("------- TOTAL APR: ", apr);
-    // }
+    function test_displayAPR() public {
+        uint256 apr = oracle.aprAfterDebtChange(address(strategy), 0);
+        console2.log("------- TOTAL APR: ", apr);
+    }
 
     // TODO: Deploy multiple strategies with different tokens as `asset` to test against the oracle.
 }

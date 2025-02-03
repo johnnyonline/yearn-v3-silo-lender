@@ -15,6 +15,10 @@ import {SiloStrategyFactory, SiloStrategy} from "../../strategies/silo/SiloStrat
 
 import "forge-std/console.sol";
 
+interface IPriceProvider {
+    function setHeartbeat(address _asset, uint256 _heartbeat) external;
+}
+
 contract Strategies is ExtendedTest {
 
     // LlamaEdition
@@ -29,7 +33,7 @@ contract Strategies is ExtendedTest {
     address private constant _usdcwstETHSilo = 0xA8897b4552c075e884BDB8e7b704eB10DB29BF0D;
     address private constant _siloRepositoryARB = 0x8658047e48CC09161f4152c79155Dac1d710Ff0a;
     address private constant _usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // 6 decimals
-    address private constant _incentivesControllerARB = 0x7e5BFBb25b33f335e34fa0d78b878092931F8D20; // SILO rewards
+    address private constant _incentivesControllerARB = 0xbDBBf747402653A5aD6F6B8c49F2e8dCeC37fAcF; // SILO rewards
     // 0xCC4933B0405Ae9DDFE05a54d20f56A0447c9EBcF // ARB rewards
     address private constant _wstETH = 0x5979D7b546E38E414F7E9822514be443A4800529;
     address private constant _crvArb = 0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978;
@@ -43,6 +47,14 @@ contract Strategies is ExtendedTest {
     address private constant _incentivesControllerOP = 0x847D9420643e117798e803d9C5F0e406277CB622;
     address private constant _wBTC = 0x68f180fcCe6836688e9084f035309E29Bf0A2095;
     address private constant _snxOP = 0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4;
+
+    // Base
+    address private constant _usdcwstETHSiloBASE = 0xEB42de7d17dfAFfD03AF48c2A51c3FB7274d3396;
+    address private constant _siloRepositoryBASE = 0xa42001D6d2237d2c74108FE360403C4b796B7170;
+    address private constant _usdcBASE = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913; // 6 decimals
+    address private constant _incentivesControllerBASE = 0x626e6A8D4EB33D77A8b631ABfE2E98dA69E3100e;
+    address private constant _wstETHBASE = 0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452;
+    address private constant _aero = 0x940181a94A35A4569E4529A3CDfB74e38FD98631;
 
     // ----
 
@@ -65,12 +77,20 @@ contract Strategies is ExtendedTest {
     // address private constant _crv = _crvArb;
 
     // Optimism
-    address private constant silo = _usdcwBTCSilo;
-    address private constant borrowedAsset = _usdcOP;
-    address private constant collateralAsset = _wBTC;
-    address private constant incentivesController = _incentivesControllerOP;
-    address private constant siloRepository = _siloRepositoryOP;
-    address private constant _crv = _snxOP;
+    // address private constant silo = _usdcwBTCSilo;
+    // address private constant borrowedAsset = _usdcOP;
+    // address private constant collateralAsset = _wBTC;
+    // address private constant incentivesController = _incentivesControllerOP;
+    // address private constant siloRepository = _siloRepositoryOP;
+    // address private constant _crv = _snxOP;
+
+    // Base
+    address private constant silo = _usdcwstETHSiloBASE;
+    address private constant borrowedAsset = _usdcBASE;
+    address private constant collateralAsset = _wstETHBASE;
+    address private constant incentivesController = _incentivesControllerBASE;
+    address private constant siloRepository = _siloRepositoryBASE;
+    address private constant _crv = _aero;
 
     /*//////////////////////////////////////////////////////////////
                         GENERAL STRATEGY HELPERS
@@ -181,11 +201,14 @@ contract Strategies is ExtendedTest {
         );
 
         vm.stopPrank();
+
+        // vm.prank(0x43Ce9b39f752E8E4b3B715725B65b3B386F2E864);
+        // IPriceProvider(0x44E9C695624dAd0bB3690A40C90e6D7964B32D3D).setHeartbeat(_usdcBASE, 2 days);
     }
 
     function _earnSiloInterest() private {
         uint256 _accruedInterest = ISilo(silo).accrueInterest(borrowedAsset);
-        // require(_accruedInterest > 0, "no interest accrued"); // dev: could not earn interest for some reason
+        require(_accruedInterest > 0, "no interest accrued"); // dev: could not earn interest for some reason
     }
 
     function _testDepositLimit(address strategy_) private {

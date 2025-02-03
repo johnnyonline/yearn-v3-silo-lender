@@ -104,8 +104,8 @@ Stratagies:
     - Silo Lender: USDC.e/wBTC - 0x2d25Ce68AAd6Ffef1585ff05bC621db1F9F2E499
 
 Stratagies (new Factory, with manual rewards claiming):
-    - Silo Lender wstETH/USDC.e - 0xA4B8873B4629c20f2167c0A2bC33B6AF8699dDc1
-    - Silo Lender: USDC.e/wBTC - 0xE82D060687C014B280b65df24AcD94A77251C784
+    - Silo Lender USDC.e/wstETH - 0xA4B8873B4629c20f2167c0A2bC33B6AF8699dDc1
+    - Silo Lender USDC.e/wBTC - 0xE82D060687C014B280b65df24AcD94A77251C784
     - Silo Lender ARB/USDC.e - 0xb739AE19620f7ECB4fb84727f205453aa5bc1AD2
 
 TradeFactory:

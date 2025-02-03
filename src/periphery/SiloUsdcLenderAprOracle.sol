@@ -108,6 +108,7 @@ contract SiloUsdcLenderAprOracle is AprOracleBase {
         if (_ratePerSecond == 0) return 0;
 
         AggregatorV3Interface _rewardPriceOracle = oracles[_incentivesController.REWARD_TOKEN()];
+        if (address(_rewardPriceOracle) == address(0)) return 0;
         (, int256 _rewardPrice, , uint256 _updatedAt,) = _rewardPriceOracle.latestRoundData();
         if (_rewardPrice <= 0 || (block.timestamp - _updatedAt) > 1 days) revert("!oracle");
 

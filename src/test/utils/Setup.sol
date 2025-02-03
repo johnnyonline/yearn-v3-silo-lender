@@ -30,8 +30,9 @@ contract Setup is Strategies, IEvents {
     uint256 public MAX_BPS = 10_000;
 
     // Fuzz from $0.01 of 1e6 stable coins up to 1 trillion of a 1e18 coin
-    uint256 public maxFuzzAmount = 1e30;
-    uint256 public minFuzzAmount = 10_000;
+    uint256 public maxFuzzAmount = 1e30 / 1e12;
+    uint256 public minFuzzAmount = 10_000 * 1e4;
+    uint256 public skipTime = 1 hours;
 
     // Default profit max unlock time is set for 10 days
     uint256 public profitMaxUnlockTime = 10 days;
@@ -43,7 +44,8 @@ contract Setup is Strategies, IEvents {
         // asset = ERC20(tokenAddrs["crvUSD"]);
         // asset = tokenAddrs["USDC"];
         // asset = ERC20(tokenAddrs["USDC.e - Arbi"]);
-        asset = ERC20(tokenAddrs["USDC.e - OP"]);
+        // asset = ERC20(tokenAddrs["USDC.e - OP"]);
+        asset = ERC20(tokenAddrs["USDC - Base"]);
 
         // Set decimals
         decimals = asset.decimals();
@@ -150,5 +152,6 @@ contract Setup is Strategies, IEvents {
         tokenAddrs["crvUSD"] = 0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E;
         tokenAddrs["USDC.e - Arbi"] = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
         tokenAddrs["USDC.e - OP"] = 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85;
+        tokenAddrs["USDC - Base"] = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     }
 }

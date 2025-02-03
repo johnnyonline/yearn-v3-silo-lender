@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 import "forge-std/console.sol";
 import {Setup, ERC20, IStrategyInterface} from "./utils/Setup.sol";
-
+import {SiloStrategyFactory, SiloStrategy} from "../strategies/silo/SiloStrategyFactory.sol";
 contract OperationTest is Setup {
     function setUp() public virtual override {
         super.setUp();
@@ -19,7 +19,7 @@ contract OperationTest is Setup {
         _testSetupStrategyOK(address(strategy));
     }
 
-    function test_operation(uint256 _amount) public {
+    function test_operation11(uint256 _amount) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
 
         // Deposit into strategy
@@ -28,7 +28,7 @@ contract OperationTest is Setup {
         assertEq(strategy.totalAssets(), _amount, "!totalAssets");
 
         // Earn Interest
-        skip(1 days);
+        skip(skipTime);
         _earnInterest();
 
         // Report profit
@@ -67,7 +67,7 @@ contract OperationTest is Setup {
         assertEq(strategy.totalAssets(), _amount, "!totalAssets");
 
         // Earn Interest
-        skip(1 days);
+        skip(skipTime);
 
         // TODO: implement logic to simulate earning interest.
         uint256 toAirdrop = (_amount * _profitFactor) / MAX_BPS;
@@ -112,7 +112,7 @@ contract OperationTest is Setup {
         assertEq(strategy.totalAssets(), _amount, "!totalAssets");
 
         // Earn Interest
-        skip(1 days);
+        skip(skipTime);
 
         // TODO: implement logic to simulate earning interest.
         uint256 toAirdrop = (_amount * _profitFactor) / MAX_BPS;
@@ -174,7 +174,7 @@ contract OperationTest is Setup {
         assertTrue(!trigger);
 
         // Skip some time
-        skip(1 days);
+        skip(skipTime);
         _earnInterest();
 
         (trigger, ) = strategy.tendTrigger();
